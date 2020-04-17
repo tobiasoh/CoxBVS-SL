@@ -1,7 +1,7 @@
 # CoxBVS-SL
 # Cox model with Bayesian Variable Selection and Structure Learning (CoxBVS-SL)
 
-R source code and data for *Combining heterogeneous subgroups with graph-structured variable selection priors for Cox regression*.
+R source code and data associated with the publication *Madjar K, Zucknick M, Ickstadt K, and Rahnenführer J (2020): Combining heterogeneous subgroups with graph-structured variable selection priors for Cox regression. arXiv: 2004.07542*.
 
 Our method is focused on the situation of predefined, possibly heterogenous subgroups of patients with available survival endpoint and continuous molecular measurements such as gene expression
 data, with the aim of obtaining a separate risk prediction model for each subgroup.
