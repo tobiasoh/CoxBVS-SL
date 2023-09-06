@@ -1,9 +1,8 @@
-# CoxBVS-SL
-# Cox model with Bayesian Variable Selection and Structure Learning (CoxBVS-SL)
+# Cox model with Bayesian Variable Selection 
 
-R source code and data associated with the publication *Madjar K, Zucknick M, Ickstadt K, and Rahnenführer J (2020): Combining heterogeneous subgroups with graph-structured variable selection priors for Cox regression. arXiv: 2004.07542*.
+This code is based on the R source code and data associated with the publication *Madjar K, Zucknick M, Ickstadt K, and Rahnenführer J (2020): Combining heterogeneous subgroups with graph-structured variable selection priors for Cox regression. arXiv: 2004.07542*.
 
-Our method is focused on the situation of predefined, possibly heterogenous subgroups of patients with available survival endpoint and continuous molecular measurements such as gene expression
+This method is focused on the situation of predefined, possibly heterogenous subgroups of patients with available survival endpoint and continuous molecular measurements such as gene expression
 data, with the aim of obtaining a separate risk prediction model for each subgroup.
 For this purpose, we propose a Cox regression model with a graph-structured variable selection prior that incorporates information on the relationships among the covariates and encourages the joint selection of linked variables.
 These links correspond to variables either being conditionally dependent within each subgroup (e.g. functional or regulatory pathways) or being simultaneously prognostic across different subgroups.
@@ -12,10 +11,20 @@ We compare our approach to Cox regression models with an independent Bernoulli p
 We evaluate all models through simulations and a case study with Glioblastoma protein expression data.
 
 
-The main file to run the simulation study is **Run_Simulation.R** and the main file for the case study is **Run_CaseStudy.R**.
+The difference between the method in Madjar et. al (2021) and my master thesis, will be that we will not focus on heterogenous subgroups, and we will not do structure learning on the graph.
+We will use Stochastic Search Variable Selection (SSVS), just as in Madjar et. al (2021), with a Markov Random Field prior, where we keep the graph fixed. This will allow us to use the
+graph to incorporate biological knowledge about funcitional and regulatory molecular pathways, and encourage the joint inclusion of genes that are in the same pathway.
 
+
+The main file to run the MCMC simulation is **Run_func_MCMC.R**
+
+The main files to run the simulation study from Madjar et. al (2021) is **Run_Simulation.R** and the main file for the case study is **Run_CaseStudy.R**. Files from
+this paper might be removed if they are not necessary to my thesis.
 
 ## Overview of R files:
+
+#### Run_func_MCMC.R
+Running the main MCMC simulation. Currently using simulated data
 
 #### Run_Simulation.R
 
