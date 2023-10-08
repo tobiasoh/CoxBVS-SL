@@ -8,7 +8,9 @@ func_MCMC  = function( survObj, priorPara, initial, num.reps, S, method, MRF_2b,
 	  s = J = intv = vector("list", S)
 	  for(g in 1:S){
   		sg        =  sort( (survObj$t[[g]])[survObj$c[[g]] == 1])  
+  		#s[[g]]    = unique(c(sg, 2 * max(survObj$t[[g]]) - max( (survObj$t[[g]])[-which(survObj$t[[g]] == max(survObj$t[[g]]))])))
   		s[[g]]    = unique(c(sg, 2 * max(survObj$t[[g]]) - max( (survObj$t[[g]])[-which(survObj$t[[g]] == max(survObj$t[[g]]))])))
+  		
   		J[[g]]    = length(s[[g]])
   		intv[[g]] = setting.interval(survObj$t[[g]], survObj$c[[g]], s[[g]], J[[g]])
 	  }
@@ -33,7 +35,7 @@ func_MCMC  = function( survObj, priorPara, initial, num.reps, S, method, MRF_2b,
 
 	  h = lapply(priorPara$J, function(x) rgamma(x, 1, 1) )
 	  
-  }else{
+  }else{ #method = "Pooled"
 	  priorPara$s = sort(survObj$t[survObj$c == 1])  
 	  priorPara$s = unique(c(priorPara$s, 2 * max(survObj$t) - max(survObj$t[-which(survObj$t == max(survObj$t))])))
 	  priorPara$J = length(priorPara$s)
@@ -110,13 +112,15 @@ func_MCMC  = function( survObj, priorPara, initial, num.reps, S, method, MRF_2b,
 		  # update graph and precision matrix
 		  network = func_MCMC_graph(survObj, priorPara, ini, S, method, MRF_2b)
 
-			Sig.ini = ini$Sig.ini = network$Sig.ini
+			Sig.ini = ini$Sig.ini = network$Sig.ini #precision matrix?
 			C.ini   = ini$C.ini   = network$C.ini
-			V.ini   = ini$V.ini   = network$V.ini
-		  G.ini   = ini$G.ini   = network$G.ini
+			V.ini   = ini$V.ini   = network$V.ini #some sort of variance?
+		  G.ini   = ini$G.ini   = network$G.ini #graph
 	  }
     
+    
 	  # update gamma (latent indicators of variable selection)
+    #browser()
     sampleGam = UpdateGamma(survObj, priorPara, ini, S, method, MRF_2b) 
     gamma.ini = ini$gamma.ini = sampleGam$gamma.ini
 

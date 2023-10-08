@@ -63,7 +63,7 @@ sim.surv = function(X, beta, surv.e, surv.c, n){
 #' List of length 2 with training and test data for both subgroups, including unscaled and scaled
 #' gene expression data, survival time and status.
 
-sim_data_fun <- function(n, p, surv.e, surv.c, beta1.p, beta2.p){
+sim_data_fun <- function(n, p, surv.e, surv.c, beta1.p, beta2.p, cov_matrix){
   
   library(survival)
   library(mvtnorm) 
@@ -80,6 +80,8 @@ sim_data_fun <- function(n, p, surv.e, surv.c, beta1.p, beta2.p){
   sigma = diag(p)
   block = matrix(rep(.5,9), nrow=3); diag(block) = 1
   sigma[1:3, 1:3] = sigma[4:6, 4:6] = sigma[7:9, 7:9] = block
+  
+  sigma = cov_matrix
 
   # Sample gene expression data from multivariate normal distribution
   X.train1 = mvrnorm(n, rep(0,p), sigma)  

@@ -43,6 +43,10 @@ UpdateGamma <- function(sobj, priorPara, ini, S, method, MRF_2b)
   beta.ini  = ini$beta.ini
   gamma.ini = ini$gamma.ini  
   
+  if (method %in% c("Pooled")) {
+    G.ini = priorPara$G
+  }
+  
   if(method %in% c("CoxBVSSL", "Sub-struct") ){
     G.ini = ini$G.ini
   }
@@ -68,12 +72,31 @@ UpdateGamma <- function(sobj, priorPara, ini, S, method, MRF_2b)
     post.gamma = rep(0, p)
     
     for (j in 1:p) {   
-      wa   = dnorm(beta.ini[j], mean = 0, sd = cb*tau) * pi
-      wb   = dnorm(beta.ini[j], mean = 0, sd = tau) * (1 - pi)
-      pgam = wa/(wa + wb)
-      u = runif(1)
-      gamma.ini[j]  = ifelse(u < pgam, 1, 0)		
-      post.gamma[j] = pgam
+      #wa   = dnorm(beta.ini[j], mean = 0, sd = cb*tau) * pi
+      #wb   = dnorm(beta.ini[j], mean = 0, sd = tau) * (1 - pi)
+      #pgam = wa/(wa + wb)
+      #u = runif(1)
+      #gamma.ini[j]  = ifelse(u < pgam, 1, 0)		
+      #post.gamma[j] = pgam
+      
+      
+      
+      beta = beta.ini[j]
+      
+      ga.prop1 = ga.prop0 = gamma.ini # gamma with gamma_g,j=1 or 0
+      ga.prop1[j] = 1
+      ga.prop0[j] = 0
+      ga.prop1 = unlist(ga.prop1)
+      ga.prop0 = unlist(ga.prop0)
+      
+      wa = ( a*sum(ga.prop1)+ t(ga.prop1) %*% G.ini %*% ga.prop1 ) + dnorm(beta, mean = 0, sd = tau*cb, log = TRUE)
+      wb = ( a*sum(ga.prop0)+ t(ga.prop0) %*% G.ini %*% ga.prop0 ) + dnorm(beta, mean = 0, sd = tau, log = TRUE)
+      
+      w_max = max(wa, wb)
+      pg    = exp(wa - w_max)/(exp(wa - w_max) + exp(wb - w_max))
+      
+      gamma.ini[j]  = as.numeric(runif(1) < pg)
+      post.gamma[j] = pg	
     }
   }else{
     post.gamma = rep( list(rep(0,p)), S ) 
