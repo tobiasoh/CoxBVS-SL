@@ -7,7 +7,8 @@ library(plotrix)
 
 #load("SimulationStudy/sparse_smallN/N=100_P=100/simulation_results98056840_emptyGraph_N100.RDdata")
 
-load("SimulationStudy/sparse_smallN/N=100_P=200/simulation_results3612351_true_N100_P200.RDdata")
+#load("SimulationStudy/sparse_smallN/N=100_P=200/from_server/simulation_results34000876_partial_N100_P200.RDdata")
+load("SimStudy/test/true1.RData")
 mcmc_iterations = simulation_result$mcmcIterations
 
 #MCMC diagnostics: model size
@@ -43,10 +44,11 @@ loglik = simulation_result$result$log.like
 ggplot(data = data.frame(loglik), aes(x=1:mcmc_iterations, y=loglik)) + 
          geom_line() + 
          ggtitle("Log likelihood") + 
+         theme(plot.title = element_text(hjust = 0.5)) + 
          labs(x="MCMC iterations", y = "Log likelihood")
 
 
-
+warmup = mcmc_iterations/2
 #check frequency of each inclusion indicator to be 1 for each variable
 meanPIF = rep(0, length(simulation_result$truePara$beta)-7)
 for (i in 8:length(simulation_result$truePara$beta)) {
@@ -60,7 +62,6 @@ plot(meanPIF)
 
 
 # manhattan plot: mean posterior inclusion probability
-warmup = 300
 post_gamma= simulation_result$result$post.gamma[-(1:warmup),] #removing warmup period
 
 
@@ -70,7 +71,7 @@ cred_int = t(apply(post_gamma, 2, function(x) quantile(x, c(lower_quantile, uppe
 mPIP = colMeans(post_gamma) #mean posterior inclusion probability
 
 gfg = data.frame(x=1:20, y=mPIP[1:20], low=cred_int[1:20,1], up=cred_int[1:20,2])
-gfg = data.frame(x=1:100, y=mPIP, low=cred_int[,1], up=cred_int[,2])
+gfg = data.frame(x=1:200, y=mPIP, low=cred_int[,1], up=cred_int[,2])
 
 ggplot(data=gfg, aes(x,y)) + geom_point() +# + geom_errorbar(aes(ymin=low, ymax=up))# +
   theme(aspect.ratio=1/2, plot.title = element_text(hjust = 0.5)) + 
@@ -97,14 +98,21 @@ beta_after_warmup = simulation_result$result$beta.p[-(1:warmup),]
 cred_int = t(apply(beta_after_warmup, 2, function(x) quantile(x, c(lower_quantile, upper_quantile))))
 posterior_means = colMeans(beta_after_warmup)
 
-gfg = data.frame(x=1:50, y=posterior_means[1:50], low=cred_int[1:50,1], up=cred_int[1:50,2])
-gfg = data.frame(x=1:100, y=posterior_means, low=cred_int[,1], up=cred_int[,2])
+gfg = data.frame(x=1:20, y=posterior_means[1:20], low=cred_int[1:20,1], up=cred_int[1:20,2])
+gfg = data.frame(x=1:200, y=posterior_means, low=cred_int[,1], up=cred_int[,2])
 
 ggplot(data=gfg, aes(x,y)) + geom_point() + geom_errorbar(aes(ymin=low, ymax=up)) +
-  geom_point(aes(x, simulation_result$truePara$beta[1:50]), color="red") +
+  geom_point(aes(x, simulation_result$truePara$beta[1:20]), color="red") +
   theme(plot.title = element_text(hjust = 0.5)) + 
   labs(x="Covariate index", y = "Beta posterior") + 
   ggtitle("Beta posterior means and 95% credible intervals")
+
+
+
+
+
+
+
 
 
 

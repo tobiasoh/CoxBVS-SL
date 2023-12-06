@@ -153,11 +153,11 @@ func_MCMC  = function( survObj, priorPara, initial, num.reps, S, method, MRF_2b,
 		  mcmcOutcome$V.p       = c( mcmcOutcome$V.p, list(V.ini) )
 		  mcmcOutcome$C.p       = c( mcmcOutcome$C.p, list(C.ini) )
 		  mcmcOutcome$Sig.p     = c( mcmcOutcome$Sig.p, list(Sig.ini) )
-  	}else{
+  	}else{ 
   		if(method == "Subgroup"){
   			mcmcOutcome$log.jpost = rbind(mcmcOutcome$log.jpost, log.j)
   			mcmcOutcome$log.like  = rbind(mcmcOutcome$log.like, log.lh)
-  		}else{
+  		}else{ #method == "Pooled"
   			mcmcOutcome$log.jpost = c(mcmcOutcome$log.jpost, log.j)
   			mcmcOutcome$log.like  = c(mcmcOutcome$log.like, log.lh)
   		}	
@@ -178,8 +178,10 @@ func_MCMC  = function( survObj, priorPara, initial, num.reps, S, method, MRF_2b,
   		  }
   		}
 	  mcmcOutcome$accept.RW = RW.accept
-
-	  print(M)
+    
+	  if (M %% 1000 == 0) {
+	    print(M) 
+	  }
 	  
   	if(M == num.reps){
   	  print( sessionInfo() )
