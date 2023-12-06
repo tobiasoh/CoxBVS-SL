@@ -436,7 +436,7 @@ brier_score_mpm = function(beta, X, survival_data, h.g) {
   #browser()
   return(brier_score)
 }
-}
+
 
 
 
