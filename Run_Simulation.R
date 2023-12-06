@@ -1,9 +1,9 @@
 # Run both simulations with all settings described in the paper
 
-library("batchtools")
+#library("batchtools")
 
 # Batchtools registry to save all information regarding computational jobs and all results
-reg =  makeExperimentRegistry(file.dir = "CoxBVSSL_Sim") 
+#reg =  makeExperimentRegistry(file.dir = "CoxBVSSL_Sim") 
 
 # "Problem" function in batchtools that creates problem instance (here: generation of training
 # and test data) used in the "algorithmic" function below. 
