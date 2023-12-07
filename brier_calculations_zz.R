@@ -13,7 +13,7 @@ BrierScoreVectorised = function(beta, X, survival_data, time_points, h.g, time_i
   
   event_times = surv_time[surv_status == 1]
   
-  surv_object = Surv(time = surv_time, event = surv_status) # be sure event is surv_status or 1-surv_status=?
+  surv_object = Surv(time = surv_time, event = 1 - surv_status) 
   km_censor = survfit(surv_object ~ 1)
   n = length(survival_data$time.train) #number of patients
   
@@ -22,7 +22,7 @@ BrierScoreVectorised = function(beta, X, survival_data, time_points, h.g, time_i
   for (i in 1:mcmc_iter) {
     
     linear_pred = exp(X %*% beta[i,])
-    H0 = cumsum(h.g[i,])
+    H0 = cumsum(h.g[i,]) ## ? better to summarize H0 over MCMC iterations first and then combine it with linear predictor based on posterior mean of betas
     
     time_interval = rep(0, num_time_points)
     indicator = array(0, dim=c(num_time_points, n))
@@ -55,8 +55,7 @@ BrierScoreVectorised = function(beta, X, survival_data, time_points, h.g, time_i
         w_mt[t,] = rep(1/summary(km_censor, time=time_points[t], extend=T)$surv, n)
       } else {
         w_mt[t,indices] = (surv_status/summary(km_censor, time=surv_time, extend=T)$surv)[indices]#(surv_status / summary(km_censor, time=surv_time[survival_data$status.train == 1], extend=T)$surv)#[indices[,1]]
-        #w_mt[t,-c(indices)] = rep(1/summary(km_censor, time=time_points[t], extend=T)$surv, n - length(indices)) #rep(1/summary(km_censor, time=time_points, extend=T)$surv, n - length(indices[2]) - 1)
-        w_mt[t,-c(indices)] = 0
+        w_mt[t,-c(indices)] = rep(1/summary(km_censor, time=time_points[t], extend=T)$surv, n - length(indices)) #rep(1/summary(km_censor, time=time_points, extend=T)$surv, n - length(indices[2]) - 1)
         
       }
       

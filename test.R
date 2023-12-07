@@ -30,17 +30,21 @@ plot(colMeans(brier) ~ time_star, type = "S", lty = 1, ylim = c(0, max(brier)),
 ## Compute Brier score based on 'riskRegression' package
 ## Note that the baseline hazard function (h.p) as estimated from the training data is not used for predictions, similar to Zucknick et al. (2015)
 #==============================================
-beta_mean <- apply(simulation_result$result$beta[-(1:warmup),], 2, mean)
+beta_mean <- apply(simulation_result$result$beta[-(1:warmup),], 2, mean) # instead of posterior mean of betas, better to use MPM betas here
 lp <- as.vector(simulation_result$X.train %*% beta_mean)
 times <- simulation_result$survival_data$time.train
 status <- simulation_result$survival_data$status.train
 data_train <- data.frame(time = times, status = status, lp = lp)
 bayes_train <- coxph(Surv(time, status) ~ lp, 
                      data = data_train, y = TRUE, x = TRUE)
+lp_test <- lp
+time_test <- times
+status_test <- status
+data_test<- data.frame(time = time_test, status = status_test, lp = lp_test)
 library(riskRegression)
 Brier_train <- riskRegression::Score(list("Brier_train" = bayes_train), 
                                      formula = Surv(time, status) ~ 1, 
-                                     data = data_train, conf.int = FALSE, 
+                                     data = data_test, conf.int = FALSE, 
                                      metrics = "brier", summary = "ibs", 
                                      times = sort(unique(data_train$time)))$Brier$score
                                      #times = time_star)$Brier$score
