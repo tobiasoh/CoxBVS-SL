@@ -2,7 +2,9 @@
 #' Contains two functions for data simulation
 
 # Weibull parameters for simulation of survival data
-load("Weibull_param.RData")
+
+path = "." #"./tobiasoh/data/"
+load(sprintf("%s/Weibull_param.RData", path))
 
 #' Helper function for simulation of survival outcome
 #' 
@@ -77,9 +79,9 @@ sim_data_fun <- function(n, p, surv.e, surv.c, beta1.p, beta2.p, cov_matrix){
   beta2 = c( beta2.p, rep(0,p-p.e) )
   
   # Covariance matrix in both subgroups
-  sigma = diag(p)
-  block = matrix(rep(.5,9), nrow=3); diag(block) = 1
-  sigma[1:3, 1:3] = sigma[4:6, 4:6] = sigma[7:9, 7:9] = block
+  #sigma = diag(p)
+  #block = matrix(rep(.5,9), nrow=3); diag(block) = 1
+  #sigma[1:3, 1:3] = sigma[4:6, 4:6] = sigma[7:9, 7:9] = block
   
   sigma = cov_matrix
 

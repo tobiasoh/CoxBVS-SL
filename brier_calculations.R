@@ -1,3 +1,38 @@
+library(survival)
+
+brier_rr = function(sim_result) {
+  
+  beta_mean <- colMeans(sim_result$result$beta[-(1:warmup),]) # instead of posterior mean of betas, better to use MPM betas here
+  gamma_mean <- colMeans(sim_result$result$gamma.p[-(1:warmup),])
+  beta_mpm <- beta_mean / gamma_mean
+  beta_mpm[gamma_mean <= 0.5] <- 0
+  lp <- as.vector(sim_result$X.train %*% beta_mpm)
+  times <- sim_result$survival_data$time.train
+  status <- sim_result$survival_data$status.train
+  data_train <- data.frame(time = times, status = status, lp = lp)
+  bayes_train <- coxph(Surv(time, status) ~ lp, 
+                       data = data_train, y = TRUE, x = TRUE)
+  lp_test <- lp
+  time_test <- times
+  status_test <- status
+  data_test<- data.frame(time = time_test, status = status_test, lp = lp_test)
+  library(riskRegression)
+  Brier_train <- riskRegression::Score(list("Brier_train" = bayes_train), 
+                                       formula = Surv(time, status) ~ 1, 
+                                       data = data_test, conf.int = FALSE, 
+                                       metrics = "brier", summary = "ibs", 
+                                       times = sort(unique(data_train$time)))$Brier$score
+  #times = time_star)$Brier$score
+  Brier_score <- Brier_train[Brier_train$model != "Null model", ]
+  plot(Brier_score$Brier ~ Brier_score$times, type = "S", lty = 1, 
+       xlab = "time", ylab = "Brier score", main = "riskRegression")
+  
+  #sim_scenarios[[scenario]][[i]]$ibs <- Brier_score$IBS[which.max(Brier_score$times)]
+  
+  
+  
+  return(Brier_score)
+}
 
 
 integratedBrierScore2 = function(brier_score, time_points) {
@@ -255,8 +290,6 @@ BrierScoreVectorised = function(beta, X, survival_data, time_points, h.g, time_i
   surv_object = Surv(time = surv_time, event = 1 - surv_status)
   km_censor = survfit(surv_object ~ 1)
   n = length(survival_data$time.train) #number of patients
-  
-  
   
   for (i in 1:mcmc_iter) {
     

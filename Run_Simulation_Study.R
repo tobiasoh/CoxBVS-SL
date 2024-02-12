@@ -5,7 +5,7 @@ library(RhpcBLASctl)
 args = commandArgs(trailingOnly = T)
 
 server = "server" %in% args
-path = ""
+path = "./"
 if (server) {
   path = "/data/tobiasoh/"
 }
@@ -23,10 +23,20 @@ graph = args[1]
 mcmc_iterations = as.integer(args[2])
 if (any( lapply("t[0-9]+", grepl, args)[[1]] ) ) {
   index = which( lapply("t[0-9]+", grepl, args)[[1]] ) 
-  thinning = as.integer(gregexpr("[0-9]+", args[index]))
+  #thinning = as.integer(gregexpr("[0-9]+", args[index]))
+  thinning = as.integer(gsub("\\D", "", args[index]))
 } else {
   thinning = 1
 }
+
+
+if (any( lapply("d[0-9]+", base::grepl, args)[[1]] ) ) {
+  index = which( lapply("d[0-9]+", grepl, args)[[1]] ) 
+  num_dataset = as.integer(gsub("\\D", "", args[index]))
+} else {
+  num_dataset = 1
+}
+
 
 
 
@@ -54,7 +64,7 @@ p = 200
 if (server) {
   load("/data/tobiasoh/truePara.RData")
 } else {
-  load("SimulationStudy/sparse_smallN/N=100_P=200/truePara.RData")
+  load("./SimStudy/truePara.RData")
 }
 
 truePara$gamma = as.numeric(truePara$beta != 0)
@@ -108,27 +118,72 @@ if (grepl("partial_non_uniform", graph, fixed=T)) {
   #edges_remove = sample(unique(edges[,1]), 5)
   #G[edges_remove,] = 0
   #G[,edges_remove] = 0
+  num_vars = as.integer(gsub("\\D", "", graph))
   
-  G[1:5, 1:5] = 0
+  
+  G[1:num_vars, 1:num_vars] = 0
   
 }
 
 if (grepl("noise", graph, fixed=T)) {
-  num_edges = ceiling(sum(G == 1)/2)
-  edges_added = 0
-  
-  while (edges_added < num_edges) {
-    indices = sample.int(p, 2)
-  
-  
-    if (G[indices[1], indices[2]] == 0) {
-      G[indices[1], indices[2]] = G[indices[2], indices[1]] = 1
-      edges_added = edges_added + 1
-    }
+
+  num_noise = as.integer(gsub("\\D", "", graph))
+  if (num_noise == 100) {
+    load(sprintf("%s/SimStudy/real_sim/noise_graph.RData", path))
   }
+  if (num_noise == 50) {
+    load(sprintf("%s/SimStudy/real_sim/noise_graph50.RData", path))
+  }
+  if (num_noise == 200) {
+    load(sprintf("%s/SimStudy/real_sim/noise_graph200.RData", path))
+  }
+  
+  
+  # num_edges = sum(G == 1)
+  # edges_added = 0
+  # 
+  # while (edges_added < num_edges) {
+  #   indices = sample.int(p, 2)
+  # 
+  # 
+  #   if (G[indices[1], indices[2]] == 0) {
+  #     G[indices[1], indices[2]] = G[indices[2], indices[1]] = 1
+  #     edges_added = edges_added + 1
+  #   }
+  # }
 
 }
-
+if (grepl("line", graph, fixed=T)) {
+  degree = as.integer(gsub("\\D", "", graph)) #9 gives 10%, 3 ish 25%. 2 gives 1/3. 15 ish 6%
+  G = matrix(data = as.numeric( sigma != 0 ), nrow=p, ncol=p)
+  diag(G) = 0  
+  vectorised = c(G)
+  num_removed = 1
+  
+  for (i in 1:length(vectorised)) {
+    if (vectorised[i] == 1) {
+      if (num_removed == degree) {
+        #vectorised[i] = 0
+        num_removed = 0
+      }
+      else {
+        vectorised[i] = 0
+        num_removed = num_removed + 1
+      }
+    }
+  }
+  
+  G = matrix(vectorised, nrow=p, ncol=p)
+  #G[1,15] = G[15,1] = 1
+}
+if (grepl("non_uniform_max", graph, fixed=T)) {
+  num_vars = as.integer(gsub("\\D", "", graph))
+  G = matrix(data = as.numeric( sigma != 0 ), nrow=p, ncol=p)
+  diag(G) = 0  
+  G[1:num_vars,] = 0
+  G[,1:num_vars] = 0
+  
+}
 
 #truePara = list("beta" = trueBeta, "sigma" = sigma)
 
@@ -176,7 +231,13 @@ n = 100
 #                      num.reps = mcmc_iterations,
 #                      seed=seed)
 
-dataset = make_dataset(n, truePara)
+####dataset = make_dataset(n, truePara)
+
+#num_dataset = gsub("\\D", "", graph)
+#num_dataset= as.integer(gsub("\\D", "", args[3]))
+load(sprintf("%s/SimStudy/datasets/dataset%s.RData", path, num_dataset))
+
+
 #load(file="SimulationStudy/sparse_largeN/dataset_n100_p200.RData")
 #load(file="SimulationStudy/sparse_smallN/dataset_sparse_smallN.RData")
 #load(file="dataset_n100_p200.RData")
@@ -219,7 +280,7 @@ if (thinning > 1) {
 #need to adapt warmup to the thinnning parameter. Wants half of iterations kept as warmup
 warmup = ceiling( length(seq(1,mcmc_iterations, thinning))/2 )#ceiling(mcmc_iterations/2)
 
-metrics = sensitivity_and_specificity(result, p, warmup)
+#metrics = sensitivity_and_specificity(result, p, warmup)
 
 
   
@@ -231,9 +292,9 @@ metrics = sensitivity_and_specificity(result, p, warmup)
 
 
 time_points =  seq(0,5,0.1)
-brier_score = BrierScoreVectorised(result$beta.p[-(1:warmup),], dataset$X.train, survival_data, time_points, result$h.p[-(1:warmup),], result$s)
+#brier_score = BrierScoreVectorised(result$beta.p[-(1:warmup),], dataset$X.train, survival_data, time_points, result$h.p[-(1:warmup),], result$s)
 
-ibs = integratedBrierScore(brier_score, time_points)
+#ibs = integratedBrierScore(brier_score, time_points)
 
 
 simulation_result = list("truePara"=truePara,
@@ -243,13 +304,17 @@ simulation_result = list("truePara"=truePara,
                          "mcmcIterations" = mcmc_iterations,
                          "n" = n,
                          "seed" = seed,
-                         "brier_score" = brier_score,
-                         "ibs" = ibs,
+                         #"brier_score" = brier_score,
+                         #"ibs" = ibs,
                          "thinning" = thinning,
-                         "metrics" = metrics,
+                         #"metrics" = metrics,
                          "survival_data" = survival_data,
                          "X.train" = dataset$X.train
 )
+#save(simulation_result, file=sprintf("%sSimStudy/real_sim/%s.RData", path, graph))
+
+p=200
+simulation_result$metrics = sensitivity_and_specificity(simulation_result, p, warmup)
 
 
 #save(dataset, file="SimulationStudy/sparse_largeN/dataset_n100_p200.RData")
@@ -258,4 +323,4 @@ simulation_result = list("truePara"=truePara,
 
 #save(simulation_result, file=sprintf("/data/tobiasoh/simulation_results/%s.RData", graph) )
 
-save(simulation_result, file=sprintf("%sSimStudy/full_sim_thin6/%s.RData", path, graph))
+save(simulation_result, file=sprintf("%s/SimStudy/real_sim_thin6/%s_%d.RData", path, graph, num_dataset))

@@ -32,8 +32,8 @@ fi
 
   for i in {1..20} 
   do 
-  screen -dmS "$1$i"
-  screen -S "$1$i" -p 0 -X stuff "nice -n 19 taskset -c 20-88 Rscript /data/tobiasoh/Run_Simulation_Study.R $1$i $MCMC server t$THIN\n"
+  screen -dmS "$1_$i"
+  screen -S "$1_$i" -p 0 -X stuff "nice -n 19 taskset -c 1-93 Rscript /data/tobiasoh/Run_Simulation_Study.R $1 $MCMC server d$i t$THIN\n"
 
   done
   

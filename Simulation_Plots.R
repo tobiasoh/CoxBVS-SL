@@ -8,15 +8,16 @@ library(plotrix)
 #load("SimulationStudy/sparse_smallN/N=100_P=100/simulation_results98056840_emptyGraph_N100.RDdata")
 
 #load("SimulationStudy/sparse_smallN/N=100_P=200/from_server/simulation_results34000876_partial_N100_P200.RDdata")
-load("SimStudy/test/true1.RData")
-mcmc_iterations = simulation_result$mcmcIterations
+#load("SimStudy/test/true1.RData")
+load("SimStudy/real_sim_thin6/RData")
+mcmc_iterations = simulation_result$mcmcIterations / simulation_result$thinning
 
 #MCMC diagnostics: model size
-mcmc_iterations = simulation_result$mcmcIterations
-model_size = rep(0, mcmc_iterations+1)
+
+model_size = rep(0, mcmc_iterations)
 
 
-for (i in 1:(mcmc_iterations+1)) {
+for (i in 1:(mcmc_iterations)) {
   model_size[i] = sum( as.numeric( simulation_result$result$gamma.p[i,] != 0))# / length(simulation_result$result$gamma.p[i,])
   
 }
@@ -24,10 +25,10 @@ for (i in 1:(mcmc_iterations+1)) {
 df = data.frame(model_size)
 true_model_size = sum( as.numeric(simulation_result$truePara$beta != 0) )# / length(simulation_result$truePara$beta)
 
-ggplot(data=df, aes(x=0:mcmc_iterations, y=model_size)) + 
+ggplot(data=df, aes(x=1:mcmc_iterations, y=model_size)) + 
   geom_line() +
   theme(plot.title = element_text(hjust = 0.5)) + 
-  geom_line(aes(x=0:mcmc_iterations, y=true_model_size), linetype="dashed", color="red" ) + 
+  geom_line(aes(x=1:mcmc_iterations, y=true_model_size), linetype="dashed", color="red" ) + 
   ggtitle("Model size") +
   labs(x="MCMC iterations", y = "Model size") #+ 
   #geom_text(aes(label=c("", "True model size")))
@@ -48,7 +49,7 @@ ggplot(data = data.frame(loglik), aes(x=1:mcmc_iterations, y=loglik)) +
          labs(x="MCMC iterations", y = "Log likelihood")
 
 
-warmup = mcmc_iterations/2
+warmup = ceiling(mcmc_iterations/2)
 #check frequency of each inclusion indicator to be 1 for each variable
 meanPIF = rep(0, length(simulation_result$truePara$beta)-7)
 for (i in 8:length(simulation_result$truePara$beta)) {
@@ -86,7 +87,7 @@ labs(x="Covariate index", y="mPIP") +
 
 #beta credible interval plots
 
-
+load("./SimStudy/real_sim/true1.RData")
 lower_quantile=0.025
 upper_quantile=0.975
 
@@ -97,6 +98,7 @@ beta_after_warmup = simulation_result$result$beta.p[-(1:warmup),]
 
 cred_int = t(apply(beta_after_warmup, 2, function(x) quantile(x, c(lower_quantile, upper_quantile))))
 posterior_means = colMeans(beta_after_warmup)
+
 
 gfg = data.frame(x=1:20, y=posterior_means[1:20], low=cred_int[1:20,1], up=cred_int[1:20,2])
 gfg = data.frame(x=1:200, y=posterior_means, low=cred_int[,1], up=cred_int[,2])
