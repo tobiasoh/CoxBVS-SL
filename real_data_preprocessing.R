@@ -18,7 +18,8 @@ dat_gene = dat_gene[,which(dat_gene$gender == "female") ] # removes 12 male and 
 #have 148 events
 
 #remove so that each patient only has one sample
-dat_gene = dat_gene[,!duplicated(dat_gene$bcr_patient_barcode)] # 5 removed
+#dat_gene = dat_gene[,!duplicated(dat_gene$bcr_patient_barcode)] # 5 removed
+dat_gene = dat_gene[,!duplicated(substr(dat_gene$bcr_patient_barcode, 1, 12))] # 16 removed
 
 #check
 length(dat_gene$bcr_patient_barcode) == length(unique(dat_gene$bcr_patient_barcode))
@@ -78,9 +79,9 @@ filtered_rna1 <- filtered$filtered_data
 
 #dat_gene_filtered = dat_gene[dat_gene$barcode %in% filtered_rna1,]
 
-#cumulative variance filtering. Keeping features that explain 50% of total variance.
+#cumulative variance filtering. Keeping features that explain 70% of total variance.
 cumsum_var <- cumsum(filtered$statistics$var)
-cumsum_cutoff <- cumsum_var[length(cumsum_var)] * 0.5
+cumsum_cutoff <- cumsum_var[length(cumsum_var)] * 0.7
 filtered_names <- filtered$statistics$feature[cumsum_var < cumsum_cutoff]
 
 
@@ -182,6 +183,7 @@ nodes_in_X = c(entrez_nodes[which(entrez_nodes %in% entrez_mut$Entrez_Gene_Id)],
 
 
 # construct the graph of X
+num_features = nrow(X)
 G = matrix(0, ncol=num_features, num_features)
 index_shift = dim(gexp_filtered)[1]
 
@@ -213,6 +215,3 @@ which_gexp = which(entrez_ids$entrezgene_id %in% entrez_mut$Entrez_Gene_Id)
 G[cbind(which_mut, which_gexp)] = 1
 G[cbind(which_gexp, which_mut)] = 1
 
-
-
-#remember split of data set into training and test
