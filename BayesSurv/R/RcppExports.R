@@ -2,18 +2,17 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 settingInterval_cpp <- function(y, delta_, s_, J_) {
-    .Call('_BayesSurv_settingInterval_cpp', PACKAGE = 'BayesSurv', y, delta_, s_, J_)
+  .Call("_BayesSurv_settingInterval_cpp", PACKAGE = "BayesSurv", y, delta_, s_, J_)
 }
 
 matProdVec <- function(x, y) {
-    .Call('_BayesSurv_matProdVec', PACKAGE = 'BayesSurv', x, y)
+  .Call("_BayesSurv_matProdVec", PACKAGE = "BayesSurv", x, y)
 }
 
 sumMatProdVec <- function(x, y) {
-    .Call('_BayesSurv_sumMatProdVec', PACKAGE = 'BayesSurv', x, y)
+  .Call("_BayesSurv_sumMatProdVec", PACKAGE = "BayesSurv", x, y)
 }
 
 updateRP_genomic_cpp <- function(p, x_, J_, ind_r_, ind_d_, ind_r_d_, be_, ga_, h_, tau, cb) {
-    .Call('_BayesSurv_updateRP_genomic_cpp', PACKAGE = 'BayesSurv', p, x_, J_, ind_r_, ind_d_, ind_r_d_, be_, ga_, h_, tau, cb)
+  .Call("_BayesSurv_updateRP_genomic_cpp", PACKAGE = "BayesSurv", p, x_, J_, ind_r_, ind_d_, ind_r_d_, be_, ga_, h_, tau, cb)
 }
-

@@ -2,7 +2,7 @@
 #' @title Function to Fit the Bayesian Cox Lasso Model (information below to be updated)
 #'
 #' @description
-#' This a 
+#' This a
 #'
 #' @name BayesSurv
 #' @docType package
@@ -88,44 +88,44 @@ BayesSurv <- function(data,
                       priorPara,
                       initial,
                       num.reps,
-                      seed)
-{
-  
-  survObj = list("t" = data$time.train, "c" = data$status.train, "X" = data$X.train,
-                 "SSig" = t(data$X.train)%*%data$X.train ) # sample covariance matrix
-  survObj$n = length(survObj$t) 
-  survObj$p = ncol(survObj$X)
-  
-  model.type = "Pooled"
-  #time.train = sim_surv_data[[2]] #difference between this and previously defined time.train??
-  #status.train = sim_surv_data[[1]] 
-  
-  #log.like  = coxph( Surv(time.train, status.train, type = c('right')) ~ 1 )$loglik # initial value: null model without covariates
-  #initial$log.like.ini = log.like
-  
+                      seed) {
+  survObj <- list(
+    "t" = data$time.train, "c" = data$status.train, "X" = data$X.train,
+    "SSig" = t(data$X.train) %*% data$X.train
+  ) # sample covariance matrix
+  survObj$n <- length(survObj$t)
+  survObj$p <- ncol(survObj$X)
+
+  model.type <- "Pooled"
+  # time.train = sim_surv_data[[2]] #difference between this and previously defined time.train??
+  # status.train = sim_surv_data[[1]]
+
+  # log.like  = coxph( Surv(time.train, status.train, type = c('right')) ~ 1 )$loglik # initial value: null model without covariates
+  # initial$log.like.ini = log.like
+
   # check the formula
   cl <- match.call()
-  
-  #defining parameters for the main MCMC simulation function
-  nu0 = 0.05
-  nu1 = 5
-  lambda = 3
-  S = 1
-  
-  
+
+  # defining parameters for the main MCMC simulation function
+  nu0 <- 0.05
+  nu1 <- 5
+  lambda <- 3
+  S <- 1
+
+
   # estimate shape and scale parameter of Weibull distribution
   # (hyperparameters for prior of H* (mean function in Gamma process prior for baseline hazard))
-  surv_obj = Surv(time=pmin(survObj$t, survObj$c), event = as.numeric(survObj$t <= survObj$c))
-  surv_obj = Surv(data$time.train, data$status.train)
-  fit     = survreg(surv_obj ~ 1, dist = "weibull", x = TRUE, y = TRUE)
-  kappa0  = 1/exp(fit$icoef["Log(scale)"]) 
-  eta0    = exp(fit$coefficients)^(-kappa0)  
-  priorPara$kappa0 = kappa0
-  priorPara$eta0 = eta0
-  
+  surv_obj <- Surv(time = pmin(survObj$t, survObj$c), event = as.numeric(survObj$t <= survObj$c))
+  surv_obj <- Surv(data$time.train, data$status.train)
+  fit <- survreg(surv_obj ~ 1, dist = "weibull", x = TRUE, y = TRUE)
+  kappa0 <- 1 / exp(fit$icoef["Log(scale)"])
+  eta0 <- exp(fit$coefficients)^(-kappa0)
+  priorPara$kappa0 <- kappa0
+  priorPara$eta0 <- eta0
+
   ret <- list(input = list(), output = list(), call = cl)
   class(ret) <- "BayesSurv"
-  
+
   # Copy the inputs
   ret$input["p"] <- survObj$p
   ret$input["nIter"] <- num.reps
@@ -133,17 +133,17 @@ BayesSurv <- function(data,
   ret$input["thin"] <- 1
   ret$input["rw"] <- NULL
   ret$input$priorPara <- priorPara
-  
-  ret$output = func_MCMC(survObj = survObj,
-                  priorPara = priorPara, 
-                  initial = initial, 
-                  num.reps = num.reps, 
-                  S = 1, 
-                  method = "Pooled",#"Pooled" , #"Pooled", "CoxBVSSL", "Sub-struct" 
-                  MRF_2b = FALSE, 
-                  seed=seed
-  )
-  
-  return(ret) 
-}
 
+  ret$output <- func_MCMC(
+    survObj = survObj,
+    priorPara = priorPara,
+    initial = initial,
+    num.reps = num.reps,
+    S = S,
+    method = "Pooled", # "Pooled" , #"Pooled", "CoxBVSSL", "Sub-struct"
+    MRF_2b = FALSE,
+    seed = seed
+  )
+
+  return(ret)
+}
