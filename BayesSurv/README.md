@@ -18,6 +18,7 @@ remotes::install_github("tobiasoh/master_thesis/BayesSurv")
 ### Simulate data
 
 ```r
+
 library(MASS)
 library(survival)
 library(mvtnorm)
@@ -57,9 +58,8 @@ if (grepl("true", graph, fixed=T)) {
 if (grepl("empty", graph, fixed=T))
   G = matrix(0, nrow=p, ncol=p)  
 
-S = 1
-
-priorParaPooled = list(#"eta0"   = eta0,                   # prior of baseline hazard
+priorParaPooled = list(
+  #"eta0"   = eta0,                   # prior of baseline hazard
   #"kappa0" = kappa0,                 # prior of baseline hazard
   "c0"     = 2,                      # prior of baseline hazard
   "tau"    = 0.0375,                 # standard deviation for prior of regression coefficients
@@ -81,6 +81,7 @@ p = length(truePara$beta)
 
 #simulated gene expression data, for two subgroups, split into test and training data
 sim.surv = function(X, beta, surv.e, surv.c, n){
+  library(survival)
   
   # simulate event times from Weibull distribution
   dt = (-log(runif(n)) * (1/surv.e$scale) * exp(-X %*% beta))^(1/surv.e$shape)
@@ -96,12 +97,21 @@ sim.surv = function(X, beta, surv.e, surv.c, n){
 }
 sim_data_fun <- function(n, p, surv.e, surv.c, beta1.p, beta2.p, cov_matrix){
   
+  library(survival)
+  library(mvtnorm) 
+  library(MASS)
+  
   p.e = length(beta1.p) # Number of prognostic variables 
-  S=2 # Number of subgroups
   
   # True effects in each subgroup
   beta1 = c( beta1.p, rep(0,p-p.e) )
   beta2 = c( beta2.p, rep(0,p-p.e) )
+  
+  # Covariance matrix in both subgroups
+  #sigma = diag(p)
+  #block = matrix(rep(.5,9), nrow=3); diag(block) = 1
+  #sigma[1:3, 1:3] = sigma[4:6, 4:6] = sigma[7:9, 7:9] = block
+  
   sigma = cov_matrix
   
   # Sample gene expression data from multivariate normal distribution
@@ -151,36 +161,19 @@ sim_data = sim_data_fun(n=n, p=p, surv.e=Surv.e, surv.c=Surv.c, beta1.p = truePa
 
 ```r
 ## prepare data
-X.train = sim_data$Traindata[[1]]$X.train
-time.train = sim_data$Traindata[[1]]$time.train
-status.train = sim_data$Traindata[[1]]$status.train
+dataset = list("X" = sim_data$Traindata[[1]]$X.train, 
+               "t" = sim_data$Traindata[[1]]$time.train,
+               "di" = sim_data$Traindata[[1]]$status.train)
 
-#for X.train and X.test, should I use scaled or unscaled
-X.train = sim_data$Traindata[[1]]$X.train
-time.train = sim_data$Traindata[[1]]$time.train
-status.train = sim_data$Traindata[[1]]$status.train
-
-X.test = sim_data$Testdata[[1]]$X.test
-time.test = sim_data$Testdata[[1]]$time.test
-status.test = sim_data$Testdata[[1]]$status.test
-
-dataset = list("X.train" = X.train, 
-               "time.train" = time.train,
-               "status.train" = status.train,
-               "X.test" = X.test,
-               "time.test" = time.test,
-               "status.test" = status.test,
-               "n" = n,
-               "truePara" = truePara)
-
-log.like  = coxph( Surv(dataset$time.train, dataset$status.train, type = c('right')) ~ 1 )$loglik # initial value: null model without covariates
+log.like  = coxph( Surv(dataset$t, dataset$di, type = c('right')) ~ 1 )$loglik # initial value: null model without covariates
 initial$log.like.ini = log.like
 
 ## run a model
 library(BayesSurv)
-library(GGally)
-fit = BayesSurv::BayesSurv(data=dataset, priorPara = priorParaPooled, initial=initial, num.reps=100, seed=123)
+fit = BayesSurv(survObj=dataset, priorPara=priorParaPooled, 
+                initial=initial, nIter=100, seed=123)
 
+library(ggplot2)
 plot(fit) + 
   coord_flip() + 
   theme(axis.text.x = element_text(angle = 90, size = 7))
