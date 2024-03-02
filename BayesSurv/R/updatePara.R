@@ -1,12 +1,19 @@
 #' BayesSurv
-#' @title Subfunctions to update parameters (information below to be updated)
+#' @title Subfunctions to update parameters
 #'
 #' @description
-#' This a
+#' This contains subfunctions to update parameters gammas, betas, baseline 
+#' hazard and graph learning parameters
 #'
 #' @name UpdateGamma
 #'
-#' @param y y
+#' @param sobj a list containing observed data
+#' @param priorPara a list containing prior parameter values
+#' @param ini a list containing prior parameters' initial values
+#' @param S the number of subgroups
+#' @param method a method option from 
+#' \code{c("Pooled", "CoxBVSSL", "Sub-struct", "CoxBVSSL", "Sub-struct")}
+#' @param MRF_2b two different b in MRF prior for subgraphs G_ss and G_rs
 #'
 #' @return An object of ...
 #'

@@ -1,12 +1,17 @@
 #' BayesSurv
-#' @title Update coefficients of the Bayesian Cox Lasso Model (information below to be updated)
+#' @title Update coefficients of the Bayesian Cox Lasso Model
 #'
 #' @description
-#' This a
+#' This an internal function to update coefficients of the Bayesian Cox Lasso Model
 #'
 #' @name UpdateRPlee11
 #'
-#' @param sobj object of ...
+#' @param sobj a list containing observed data
+#' @param priorPara a list containing prior parameter values
+#' @param ini a list containing prior parameters' initial values
+#' @param S the number of subgroups
+#' @param method a method option from 
+#' \code{c("Pooled", "CoxBVSSL", "Sub-struct", "CoxBVSSL", "Sub-struct")}
 #'
 #' @return An object of ...
 #'

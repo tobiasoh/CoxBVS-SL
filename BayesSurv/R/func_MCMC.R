@@ -1,13 +1,21 @@
 #' BayesSurv
-#' @title Function to run MCMC sampling (information below to be updated)
+#' @title Function to run MCMC sampling
 #'
 #' @description
-#' This a
+#' This an internal function for MCMC sampling
 #'
 #' @name func_MCMC
 #'
 #' @param survObj a list containing observed data from \code{n} subjects;
-#' \code{t}, \code{di}, \code{x}. See details for more information
+#' \code{t}, \code{di}, \code{X}. See details for more information
+#' @param priorPara a list containing prior parameter values
+#' @param initial a list containing prior parameters' initial values
+#' @param nIter the number of iterations of the chain
+#' @param S the number of subgroups
+#' @param method a method option from 
+#' \code{c("Pooled", "CoxBVSSL", "Sub-struct", "CoxBVSSL", "Sub-struct")}
+#' @param MRF_2b two different b in MRF prior for subgraphs G_ss and G_rs
+#' @param seed random seed
 #'
 #' @return An object of ...
 #'
@@ -16,18 +24,18 @@
 #' # Load the example dataset
 #'
 #' @export
-func_MCMC <- function(survObj, priorPara, initial, num.reps, S, method, MRF_2b, seed) {
+func_MCMC <- function(survObj, priorPara, initial, nIter, S, method, MRF_2b, seed) {
   # prior parameters for grouped data likelihood of Cox model
   if (method != "Pooled") {
     s <- J <- intv <- vector("list", S)
     for (g in 1:S) {
-      sg <- sort((survObj$t[[g]])[survObj$c[[g]] == 1])
+      sg <- sort((survObj$t[[g]])[survObj$di[[g]] == 1])
       # s[[g]]    = unique(c(sg, 2 * max(survObj$t[[g]]) - max( (survObj$t[[g]])[-which(survObj$t[[g]] == max(survObj$t[[g]]))])))
       s[[g]] <- unique(c(sg, 2 * max(survObj$t[[g]]) - max((survObj$t[[g]])[-which(survObj$t[[g]] == max(survObj$t[[g]]))])))
 
       J[[g]] <- length(s[[g]])
-      # intv[[g]] = setting.interval(survObj$t[[g]], survObj$c[[g]], s[[g]], J[[g]])
-      intv[[g]] <- settingInterval_cpp(survObj$t[[g]], survObj$c[[g]], s[[g]], J[[g]])
+      # intv[[g]] = setting.interval(survObj$t[[g]], survObj$di[[g]], s[[g]], J[[g]])
+      intv[[g]] <- settingInterval_cpp(survObj$t[[g]], survObj$di[[g]], s[[g]], J[[g]])
     }
     priorPara$s <- s
     priorPara$J <- J
@@ -50,12 +58,12 @@ func_MCMC <- function(survObj, priorPara, initial, num.reps, S, method, MRF_2b, 
 
     h <- lapply(priorPara$J, function(x) rgamma(x, 1, 1))
   } else { # method = "Pooled"
-    priorPara$s <- sort(survObj$t[survObj$c == 1])
+    priorPara$s <- sort(survObj$t[survObj$di == 1])
     priorPara$s <- unique(c(priorPara$s, 2 * max(survObj$t) - max(survObj$t[-which(survObj$t == max(survObj$t))])))
     priorPara$J <- length(priorPara$s)
 
-    # intv              = setting.interval(survObj$t, survObj$c, priorPara$s, priorPara$J)
-    intv <- settingInterval_cpp(survObj$t, survObj$c, priorPara$s, priorPara$J)
+    # intv              = setting.interval(survObj$t, survObj$di, priorPara$s, priorPara$J)
+    intv <- settingInterval_cpp(survObj$t, survObj$di, priorPara$s, priorPara$J)
     priorPara$ind.r_d <- intv$ind.r_d
     priorPara$ind.d <- intv$ind.d
     priorPara$ind.r <- intv$ind.r
@@ -120,7 +128,7 @@ func_MCMC <- function(survObj, priorPara, initial, num.reps, S, method, MRF_2b, 
   }
 
   # MCMC sampling
-  for (M in 1:num.reps) {
+  for (M in 1:nIter) {
     if (method %in% c("CoxBVSSL", "Sub-struct")) {
       # update graph and precision matrix
       network <- func_MCMC_graph(survObj, priorPara, ini, S, method, MRF_2b)
@@ -199,7 +207,7 @@ func_MCMC <- function(survObj, priorPara, initial, num.reps, S, method, MRF_2b, 
       print(M)
     }
 
-    if (M == num.reps) {
+    if (M == nIter) {
       print("DONE, exiting!")
       return(mcmcOutcome)
     }

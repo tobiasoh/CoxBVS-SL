@@ -4,40 +4,21 @@
 \name{BayesSurv}
 \alias{BayesSurv}
 \alias{BayesSurv-package}
-\title{Function to Fit the Bayesian Cox Lasso Model (information below to be updated)}
+\title{Fit the Bayesian Cox Model}
 \usage{
-BayesSurv(data, priorPara, initial, num.reps, seed)
+BayesSurv(survObj, priorPara, initial, nIter = 1, seed = 123)
 }
 \arguments{
 \item{survObj}{a list containing observed data from \code{n} subjects;
-\code{t}, \code{di}, \code{x}. See details for more information}
+\code{t}, \code{di}, \code{X}. See details for more information}
 
-\item{p}{number of covariates for variable selection}
+\item{priorPara}{a list containing prior parameter values}
 
-\item{q}{number of mandatory covariates}
-
-\item{hyperpar}{a list containing prior parameter values; among
-\code{c('groupInd', 'beta.ini', 'eta0', 'kappa0', 'c0', 'r', 'delta',
-'lambdaSq', 'sigmaSq', 'tauSq', 's', 'h', 'beta.prop.var',
-'beta.clin.var')}. See details for more information}
+\item{initial}{a list containing prior parameters' initial values}
 
 \item{nIter}{the number of iterations of the chain}
 
-\item{burnin}{number of iterations to discard at the start of the chain.
-Default is 0}
-
-\item{thin}{thinning MCMC intermediate results to be stored}
-
-\item{rw}{when setting to "TRUE", the conventional random walk Metropolis
-Hastings algorithm is used. Otherwise, the mean and the variance of the
-proposal density is updated using the jumping rule described in
-Lee et al. (2011)}
-
-\item{outFilePath}{path to where the output files are to be written}
-
-\item{tmpFolder}{the path to a temporary folder where intermediate data
-files are stored (will be erased at the end of the chain). It is specified
-relative to \code{outFilePath}}
+\item{seed}{random seed}
 }
 \value{
 An object of class \code{BayesSurv} is saved as
@@ -46,54 +27,22 @@ An object of class \code{BayesSurv} is saved as
 \item input - a list of all input parameters by the user
 \item output - a list of the all output estimates:
 \itemize{
+\item "\code{gamma.p}" - a matrix with MCMC intermediate estimates of the indicator variables of regression coefficients.
 \item "\code{beta.p}" - a matrix with MCMC intermediate estimates of the regression coefficients.
 \item "\code{h.p}" - a matrix with MCMC intermediate estimates of the increments in the cumulative baseline hazard in each interval.
-\item "\code{tauSq.p}" - a vector MCMC intermediate estimates of the hyperparameter "tauSq".
-\item "\code{sigmaSq.p}" - a vector MCMC intermediate estimates of the hyperparameter "sigmaSq".
-\item "\code{lambdaSq.p}" - a vector MCMC intermediate estimates of the hyperparameter "lambdaSq".
-\item "\code{accept.rate}" - a vector acceptance rates of individual regression coefficients.
 }
 \item call - the matched call.
 }
 }
 \description{
-This a
+This is the main function to fit a Bayesian Cox model with graph-structured 
+selection priors for sparse identification of high-dimensional covariates.
 }
 \details{
 BayesSurv
-
-
-\tabular{ll}{
-\code{t} \tab a vector of \code{n} times to the event \cr
-\code{di} \tab a vector of \code{n} censoring indicators for the event time (1=event occurred, 0=censored) \cr
-\code{x} \tab covariate matrix, \code{n} observations by \code{p} variables\cr
-\code{groupInd} \tab a vector of \code{p} group indicator for each variable\cr
-\code{beta.ini} \tab the starting values for coefficients \eqn{\beta}\cr
-\code{eta0} \tab scale parameter of gamma process prior for the cumulative baseline hazard, \eqn{\eta_0 > 0}\cr
-\code{kappa0} \tab shape parameter of gamma process prior for the cumulative baseline hazard, \eqn{\kappa_0 > 0}\cr
-\code{c0} \tab the confidence parameter of gamma process prior for the cumulative baseline hazard, \eqn{c_0 > 0}\cr
-\code{r} \tab the shape parameter of the gamma prior for \eqn{\lambda^2}\cr
-\code{delta} \tab the rate parameter of the gamma prior for \eqn{\lambda^2}\cr
-\code{lambdaSq} \tab the starting value for \eqn{\lambda^2}\cr
-\code{sigmaSq} \tab the starting value for \eqn{\sigma^2}\cr
-\code{tauSq} \tab the starting values for \eqn{\tau^2}\cr
-\code{s} \tab the set of time partitions for specification of the cumulative baseline hazard function\cr
-\code{h} \tab the starting values for \eqn{h}\cr
-\code{beta.prop.var} \tab the variance of the proposal density for \eqn{\beta} in a random walk M-H sampler\cr
-\code{beta.clin.var} \tab the starting value for the variance of \eqn{\beta}\cr
-}
 }
 \examples{
 
 # Load the example dataset
 
-}
-\references{
-Lee KH, Chakraborty S, and Sun J (2011). Bayesian Variable
-Selection in Semiparametric Proportional Hazards Model for High Dimensional
-Survival Data. \emph{The International Journal of Biostatistics}, 7(1):1-32.
-
-Zucknick M, Saadati M, and Benner A (2015). Nonidentical twins:
-Comparison of frequentist and Bayesian lasso for Cox models.
-\emph{Biometrical Journal}, 57(6):959–81.
 }

@@ -2,19 +2,34 @@
 % Please edit documentation in R/func_MCMC.R
 \name{func_MCMC}
 \alias{func_MCMC}
-\title{Function to run MCMC sampling (information below to be updated)}
+\title{Function to run MCMC sampling}
 \usage{
-func_MCMC(survObj, priorPara, initial, num.reps, S, method, MRF_2b, seed)
+func_MCMC(survObj, priorPara, initial, nIter, S, method, MRF_2b, seed)
 }
 \arguments{
 \item{survObj}{a list containing observed data from \code{n} subjects;
-\code{t}, \code{di}, \code{x}. See details for more information}
+\code{t}, \code{di}, \code{X}. See details for more information}
+
+\item{priorPara}{a list containing prior parameter values}
+
+\item{initial}{a list containing prior parameters' initial values}
+
+\item{nIter}{the number of iterations of the chain}
+
+\item{S}{the number of subgroups}
+
+\item{method}{a method option from 
+\code{c("Pooled", "CoxBVSSL", "Sub-struct", "CoxBVSSL", "Sub-struct")}}
+
+\item{MRF_2b}{two different b in MRF prior for subgraphs G_ss and G_rs}
+
+\item{seed}{random seed}
 }
 \value{
 An object of ...
 }
 \description{
-This a
+This an internal function for MCMC sampling
 }
 \details{
 BayesSurv
@@ -22,6 +37,5 @@ BayesSurv
 \examples{
 
 # Load the example dataset
-
 
 }

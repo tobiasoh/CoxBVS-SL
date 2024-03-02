@@ -2,18 +2,27 @@
 % Please edit documentation in R/UpdateRPlee11.R
 \name{UpdateRPlee11}
 \alias{UpdateRPlee11}
-\title{Update coefficients of the Bayesian Cox Lasso Model (information below to be updated)}
+\title{Update coefficients of the Bayesian Cox Lasso Model}
 \usage{
 UpdateRPlee11(sobj, priorPara, ini, S, method)
 }
 \arguments{
-\item{sobj}{object of ...}
+\item{sobj}{a list containing observed data}
+
+\item{priorPara}{a list containing prior parameter values}
+
+\item{ini}{a list containing prior parameters' initial values}
+
+\item{S}{the number of subgroups}
+
+\item{method}{a method option from 
+\code{c("Pooled", "CoxBVSSL", "Sub-struct", "CoxBVSSL", "Sub-struct")}}
 }
 \value{
 An object of ...
 }
 \description{
-This a
+This an internal function to update coefficients of the Bayesian Cox Lasso Model
 }
 \details{
 BayesSurv
@@ -21,6 +30,5 @@ BayesSurv
 \examples{
 
 # Load the example dataset
-
 
 }

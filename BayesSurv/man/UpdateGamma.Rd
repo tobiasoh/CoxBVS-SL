@@ -2,18 +2,30 @@
 % Please edit documentation in R/updatePara.R
 \name{UpdateGamma}
 \alias{UpdateGamma}
-\title{Subfunctions to update parameters (information below to be updated)}
+\title{Subfunctions to update parameters}
 \usage{
 UpdateGamma(sobj, priorPara, ini, S, method, MRF_2b)
 }
 \arguments{
-\item{y}{y}
+\item{sobj}{a list containing observed data}
+
+\item{priorPara}{a list containing prior parameter values}
+
+\item{ini}{a list containing prior parameters' initial values}
+
+\item{S}{the number of subgroups}
+
+\item{method}{a method option from 
+\code{c("Pooled", "CoxBVSSL", "Sub-struct", "CoxBVSSL", "Sub-struct")}}
+
+\item{MRF_2b}{two different b in MRF prior for subgraphs G_ss and G_rs}
 }
 \value{
 An object of ...
 }
 \description{
-This a
+This contains subfunctions to update parameters gammas, betas, baseline 
+hazard and graph learning parameters
 }
 \details{
 BayesSurv
@@ -21,6 +33,5 @@ BayesSurv
 \examples{
 
 # Load the example dataset
-
 
 }
