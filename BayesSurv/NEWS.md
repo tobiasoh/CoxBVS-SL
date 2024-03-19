@@ -5,6 +5,10 @@
 * allow to run original model in Madjar et al. (2021)
 * add more functions for the visualization of results
 
+# BayesSurv 0.0-3
+
+* Added thinning parameter
+
 # BayesSurv 0.0-2
 
 * Improved help files

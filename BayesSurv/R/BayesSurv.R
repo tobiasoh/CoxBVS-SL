@@ -19,6 +19,7 @@
 #' @param priorPara a list containing prior parameter values
 #' @param initial a list containing prior parameters' initial values
 #' @param nIter the number of iterations of the chain
+#' @param thin thinning MCMC intermediate results to be stored
 #' @param seed random seed
 #'
 #'
@@ -38,13 +39,55 @@
 #'
 #' @examples
 #'
+#' library("survival")
+#' library("GGally")
+#' library("BayesSurv")
+#' 
 #' # Load the example dataset
+#' data("simData", package = "BayesSurv")
+#' 
+#' dataset = list("X" = simData[[1]]$X, 
+#'                "t" = simData[[1]]$time,
+#'                "di" = simData[[1]]$status)
+#' 
+#' # Initial value: null model without covariates
+#' log.like  = coxph( Surv(dataset$t, dataset$di, type = c('right')) ~ 1 )$loglik 
+#' initial = list("gamma.ini" = rep(0, ncol(dataset$X)), 
+#'                "beta.ini" = rep(0, ncol(dataset$X)), 
+#'                "log.like.ini" = log.like)
+#' # Prior parameters
+#' priorParaPooled = list(
+#'   #"eta0"   = eta0,                   # prior of baseline hazard
+#'   #"kappa0" = kappa0,                 # prior of baseline hazard
+#'   "c0"     = 2,                      # prior of baseline hazard
+#'   "tau"    = 0.0375,                 # sd for coefficient prior
+#'   "cb"     = 20,                     # sd for coefficient prior
+#'   "pi.ga"  = 0.02, #0.5, ga.pi,      # prior variable selection probability for standard Cox models
+#'   "nu0"    = 0.05,                   # hyperparameter in graphical model
+#'   "nu1"    = 5,                      # hyperparameter in graphical model
+#'   "lambda" = 3,                      # hyperparameter in graphical model
+#'   "a"      = -4, #a0,                # hyperparameter in MRF prior
+#'   "b"      = 0.1, #b0,               # hyperparameter in MRF prior
+#'   "G"      = simData$G               # hyperparameter in MRF prior
+#' )    
+#'
+#' \donttest{
+#' # run Bayesian Cox with graph-structured priors
+#' fit = BayesSurv(survObj=dataset, priorPara=priorParaPooled, 
+#'                 initial=initial, nIter=100, seed=123)
+#'
+#' # show posterior mean of coefficients and 95% credible intervals
+#' plot(fit) + 
+#'   coord_flip() + 
+#'     theme(axis.text.x = element_text(angle = 90, size = 7))
+#' }
 #'
 #' @export
 BayesSurv <- function(survObj,
                       priorPara,
                       initial,
                       nIter = 1,
+                      thin = 1,
                       seed = 123) {
   # survObj <- list(
   #   "t" = data$time.train, "c" = data$status.train, "X" = data$X.train,
@@ -64,11 +107,11 @@ BayesSurv <- function(survObj,
   cl <- match.call()
 
   # defining parameters for the main MCMC simulation function
-  nu0 <- 0.05
-  nu1 <- 5
-  lambda <- 3
-  S <- 1
-
+  nu0 <- priorPara$nu0
+  nu1 <- priorPara$nu1
+  lambda <- priorPara$lambda
+  S <- NCOL(lengths(dataset))
+  initial$G.ini <- priorPara$G
 
   # estimate shape and scale parameter of Weibull distribution
   # (hyperparameters for prior of H* (mean function in Gamma process prior for baseline hazard))
@@ -96,6 +139,7 @@ BayesSurv <- function(survObj,
     priorPara = priorPara,
     initial = initial,
     nIter = nIter,
+    thin = thin,
     S = S,
     method = "Pooled", # "Pooled" , #"Pooled", "CoxBVSSL", "Sub-struct"
     MRF_2b = FALSE,

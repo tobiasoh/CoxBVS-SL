@@ -26,28 +26,48 @@ Plot point estimates of regression coefficients and 95\% credible intervals
 }
 \examples{
 
-# Load the example dataset
-data("exampleData", package = "BayesSurv")
-p <- exampleData$p
-q <- exampleData$q
-survObj <- exampleData[1:3]
+library("survival")
+library("GGally")
+library("BayesSurv")
 
-# Set hyperparameters
-mypriorPara <- list(
-  "groupInd" = 1:p, "eta0" = 0.02, "kappa0" = 1, "c0" = 2, "r" = 10 / 9,
-  "delta" = 1e-05, "lambdaSq" = 1, "sigmaSq" = runif(1, 0.1, 10),
-  "beta.prop.var" = 1, "beta.clin.var" = 1
-)
+# Load the example dataset
+data("simData", package = "BayesSurv")
+
+dataset = list("X" = simData[[1]]$X, 
+               "t" = simData[[1]]$time,
+               "di" = simData[[1]]$status)
+
+# Initial value: null model without covariates
+log.like  = coxph( Surv(dataset$t, dataset$di, type = c('right')) ~ 1 )$loglik 
+initial = list("gamma.ini" = rep(0, ncol(dataset$X)), 
+               "beta.ini" = rep(0, ncol(dataset$X)), 
+               "log.like.ini" = log.like)
+               
+# Prior parameters
+priorParaPooled = list(
+  #"eta0"   = eta0,                   # prior of baseline hazard
+  #"kappa0" = kappa0,                 # prior of baseline hazard
+  "c0"     = 2,                      # prior of baseline hazard
+  "tau"    = 0.0375,                 # sd for coefficient prior
+  "cb"     = 20,                     # sd for coefficient prior
+  "pi.ga"  = 0.02, #0.5, ga.pi,      # prior variable selection probability for standard Cox models
+  "nu0"    = 0.05,                   # hyperparameter in graphical model
+  "nu1"    = 5,                      # hyperparameter in graphical model
+  "lambda" = 3,                      # hyperparameter in graphical model
+  "a"      = -4, #a0,                # hyperparameter in MRF prior
+  "b"      = 0.1, #b0,               # hyperparameter in MRF prior
+  "G"      = simData$G               # hyperparameter in MRF prior
+)    
 
 \donttest{
-# run Bayesian Lasso Cox
-library("BayesSurv")
-set.seed(123)
-fitBayesCox <- BayesSurv(survObj,
-  p = p, q = q, hyperpar = mypriorPara,
-  nIter = 10, burnin = 0, outFilePath = tempdir()
-)
-plot(fitBayesCox, color = "blue")
+# run Bayesian Cox with graph-structured priors
+fit = BayesSurv(survObj=dataset, priorPara=priorParaPooled, 
+                initial=initial, nIter=100, seed=123)
+
+# show posterior mean of coefficients and 95\% credible intervals
+plot(fit) + 
+  coord_flip() + 
+    theme(axis.text.x = element_text(angle = 90, size = 7))
 }
 
 }

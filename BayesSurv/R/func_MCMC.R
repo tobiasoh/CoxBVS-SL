@@ -5,26 +5,27 @@
 #' This an internal function for MCMC sampling
 #'
 #' @name func_MCMC
+#' 
+#' @import stats
+#' @import utils
 #'
 #' @param survObj a list containing observed data from \code{n} subjects;
 #' \code{t}, \code{di}, \code{X}. See details for more information
 #' @param priorPara a list containing prior parameter values
 #' @param initial a list containing prior parameters' initial values
 #' @param nIter the number of iterations of the chain
+#' @param thin thinning MCMC intermediate results to be stored
 #' @param S the number of subgroups
 #' @param method a method option from 
 #' \code{c("Pooled", "CoxBVSSL", "Sub-struct", "CoxBVSSL", "Sub-struct")}
 #' @param MRF_2b two different b in MRF prior for subgraphs G_ss and G_rs
 #' @param seed random seed
 #'
-#' @return An object of ...
+#' @return A list object
 #'
-#' @examples
-#'
-#' # Load the example dataset
 #'
 #' @export
-func_MCMC <- function(survObj, priorPara, initial, nIter, S, method, MRF_2b, seed) {
+func_MCMC <- function(survObj, priorPara, initial, nIter, thin, S, method, MRF_2b, seed) {
   # prior parameters for grouped data likelihood of Cox model
   if (method != "Pooled") {
     s <- J <- intv <- vector("list", S)
@@ -128,7 +129,14 @@ func_MCMC <- function(survObj, priorPara, initial, nIter, S, method, MRF_2b, see
   }
 
   # MCMC sampling
+  
+  # Initializes the progress bar  
+  pb <- txtProgressBar(min = 0, max = nIter, style = 3, width = 50, char = "=")
+  
   for (M in 1:nIter) {
+    # Sets the progress bar to the current state
+    setTxtProgressBar(pb, M)
+    
     if (method %in% c("CoxBVSSL", "Sub-struct")) {
       # update graph and precision matrix
       network <- func_MCMC_graph(survObj, priorPara, ini, S, method, MRF_2b)
@@ -151,15 +159,6 @@ func_MCMC <- function(survObj, priorPara, initial, nIter, S, method, MRF_2b, see
     beta.tmp <- UpdateRPlee11(survObj, priorPara, ini, S, method)
     beta.ini <- ini$beta.ini <- as.vector(beta.tmp$beta.ini)
 
-    if (method == "Pooled") {
-      # RW.accept = rbind(RW.accept, beta.tmp$acceptlee)
-      RW.accept <- rbind(RW.accept, as.vector(beta.tmp$acceptlee))
-    } else {
-      for (g in 1:S) {
-        RW.accept[[g]] <- rbind(RW.accept[[g]], beta.tmp$acceptlee[[g]])
-      }
-    }
-
     # update increments in cumulative hazards
     h <- ini$h <- UpdateBH(survObj, priorPara, ini, S, method)
 
@@ -167,49 +166,60 @@ func_MCMC <- function(survObj, priorPara, initial, nIter, S, method, MRF_2b, see
     profJpost <- calJpost(survObj, priorPara, ini, S, method, MRF_2b)
     log.j <- profJpost$logjpost
     log.lh <- profJpost$loglike
-
-    # store posterior samples
-    if (method %in% c("CoxBVSSL", "Sub-struct")) {
-      mcmcOutcome$log.jpost <- c(mcmcOutcome$log.jpost, log.j)
-      mcmcOutcome$log.like <- rbind(mcmcOutcome$log.like, log.lh)
-
-      mcmcOutcome$G.p <- c(mcmcOutcome$G.p, list(G.ini))
-      mcmcOutcome$V.p <- c(mcmcOutcome$V.p, list(V.ini))
-      mcmcOutcome$C.p <- c(mcmcOutcome$C.p, list(C.ini))
-      mcmcOutcome$Sig.p <- c(mcmcOutcome$Sig.p, list(Sig.ini))
-    } else {
-      if (method == "Subgroup") {
-        mcmcOutcome$log.jpost <- rbind(mcmcOutcome$log.jpost, log.j)
-        mcmcOutcome$log.like <- rbind(mcmcOutcome$log.like, log.lh)
-      } else { # method == "Pooled"
+    
+    # store thinning MCMC intermediate results
+    if (M %% thin == 0) {
+      if (method == "Pooled") {
+        # RW.accept = rbind(RW.accept, beta.tmp$acceptlee)
+        RW.accept <- rbind(RW.accept, as.vector(beta.tmp$acceptlee))
+      } else {
+        for (g in 1:S) {
+          RW.accept[[g]] <- rbind(RW.accept[[g]], beta.tmp$acceptlee[[g]])
+        }
+      }
+      mcmcOutcome$accept.RW <- RW.accept
+      
+      # store posterior samples
+      if (method %in% c("CoxBVSSL", "Sub-struct")) {
         mcmcOutcome$log.jpost <- c(mcmcOutcome$log.jpost, log.j)
-        mcmcOutcome$log.like <- c(mcmcOutcome$log.like, log.lh)
+        mcmcOutcome$log.like <- rbind(mcmcOutcome$log.like, log.lh)
+        
+        mcmcOutcome$G.p <- c(mcmcOutcome$G.p, list(G.ini))
+        mcmcOutcome$V.p <- c(mcmcOutcome$V.p, list(V.ini))
+        mcmcOutcome$C.p <- c(mcmcOutcome$C.p, list(C.ini))
+        mcmcOutcome$Sig.p <- c(mcmcOutcome$Sig.p, list(Sig.ini))
+      } else {
+        if (method == "Subgroup") {
+          mcmcOutcome$log.jpost <- rbind(mcmcOutcome$log.jpost, log.j)
+          mcmcOutcome$log.like <- rbind(mcmcOutcome$log.like, log.lh)
+        } else { # method == "Pooled"
+          mcmcOutcome$log.jpost <- c(mcmcOutcome$log.jpost, log.j)
+          mcmcOutcome$log.like <- c(mcmcOutcome$log.like, log.lh)
+        }
+      }
+      
+      
+      if (method == "Pooled") {
+        mcmcOutcome$gamma.p <- rbind(mcmcOutcome$gamma.p, gamma.ini, deparse.level = 0)
+        mcmcOutcome$post.gamma <- rbind(mcmcOutcome$post.gamma, sampleGam$post.gamma, deparse.level = 0)
+        mcmcOutcome$beta.p <- rbind(mcmcOutcome$beta.p, beta.ini, deparse.level = 0)
+        mcmcOutcome$h.p <- rbind(mcmcOutcome$h.p, h, deparse.level = 0)
+      } else {
+        for (g in 1:S) {
+          mcmcOutcome$gamma.p[[g]] <- rbind(mcmcOutcome$gamma.p[[g]], (gamma.ini)[[g]], deparse.level = 0)
+          mcmcOutcome$post.gamma[[g]] <- rbind(mcmcOutcome$post.gamma[[g]], sampleGam$post.gamma[[g]], deparse.level = 0)
+          mcmcOutcome$beta.p[[g]] <- rbind(mcmcOutcome$beta.p[[g]], (beta.ini)[[g]], deparse.level = 0)
+          mcmcOutcome$h.p[[g]] <- rbind(mcmcOutcome$h.p[[g]], (h)[[g]], deparse.level = 0)
+        }
       }
     }
+    
+    # if (M %% 1000 == 0) {
+    #   print(M)
+    # }
 
-
-    if (method == "Pooled") {
-      mcmcOutcome$gamma.p <- rbind(mcmcOutcome$gamma.p, gamma.ini, deparse.level = 0)
-      mcmcOutcome$post.gamma <- rbind(mcmcOutcome$post.gamma, sampleGam$post.gamma, deparse.level = 0)
-      mcmcOutcome$beta.p <- rbind(mcmcOutcome$beta.p, beta.ini, deparse.level = 0)
-      mcmcOutcome$h.p <- rbind(mcmcOutcome$h.p, h, deparse.level = 0)
-    } else {
-      for (g in 1:S) {
-        mcmcOutcome$gamma.p[[g]] <- rbind(mcmcOutcome$gamma.p[[g]], (gamma.ini)[[g]], deparse.level = 0)
-        mcmcOutcome$post.gamma[[g]] <- rbind(mcmcOutcome$post.gamma[[g]], sampleGam$post.gamma[[g]], deparse.level = 0)
-        mcmcOutcome$beta.p[[g]] <- rbind(mcmcOutcome$beta.p[[g]], (beta.ini)[[g]], deparse.level = 0)
-        mcmcOutcome$h.p[[g]] <- rbind(mcmcOutcome$h.p[[g]], (h)[[g]], deparse.level = 0)
-      }
-    }
-    mcmcOutcome$accept.RW <- RW.accept
-
-    if (M %% 1000 == 0) {
-      print(M)
-    }
-
-    if (M == nIter) {
-      print("DONE, exiting!")
-      return(mcmcOutcome)
-    }
   } # the end of MCMC sampling
+  close(pb) # Close the connection of progress bar
+  
+  return(mcmcOutcome)
 }
