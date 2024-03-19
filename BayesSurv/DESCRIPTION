@@ -17,7 +17,7 @@ Imports: Rcpp, xml2, ggplot2, GGally, MASS, mvtnorm, survival,
 Suggests: knitr
 LazyData: true
 NeedsCompilation: yes
-Packaged: 2024-03-19 15:43:54 UTC; zhiz
+Packaged: 2024-03-19 16:48:52 UTC; zhiz
 Author: Zhi Zhao [aut, cre],
   Tobias Østmo Hermansen [aut],
   Katrin Madjar [aut],
