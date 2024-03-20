@@ -25,7 +25,9 @@ BayesSurv(
 \code{t}, \code{di}, \code{X}. See details for more information}
 
 \item{model.type}{a method option from 
-\code{c("Pooled", "CoxBVSSL", "Sub-struct")}}
+\code{c("Pooled", "CoxBVSSL", "Sub-struct")}. To enable graphical learning 
+for "Pooled" model, please specify \code{list(Data)}, 
+\code{model.type="Sub-struct"} and \code{MRF.G=FALSE}!}
 
 \item{MRF2b}{logical value. \code{MRF2b = TRUE} means two different 
 hyperparameters b in MRF prior (values b01 and b02) and \code{MRF2b = FALSE} 

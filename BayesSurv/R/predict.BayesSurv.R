@@ -88,7 +88,7 @@ predict.BayesSurv <- function(object, survObj.new, type = "brier",
   }
 
   #survObj_train <- as.matrix(read.table(paste0(object$input$outFilePath, "data.txt")))
-  if (object$input$S == 1) {
+  if (object$input$S == 1 && object$input$MRF.G) {
     beta_m <- object$output$beta.margin#colMeans(betas)
     betas <- object$output$beta.p[-(1:(object$input$burnin / object$input$thin + 1)), ]
     survObj <- object$output$survObj

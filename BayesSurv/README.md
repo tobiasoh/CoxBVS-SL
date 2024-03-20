@@ -41,12 +41,10 @@ initial = list("gamma.ini" = rep(0, ncol(dataset$X)),
                "log.like.ini" = log.like)
 # Prior parameters
 priorParaPooled = list(
-  #"eta0"   = eta0,                   # prior of baseline hazard
-  #"kappa0" = kappa0,                 # prior of baseline hazard
   "c0"     = 2,                      # prior of baseline hazard
   "tau"    = 0.0375,                 # sd (spike) for coefficient prior
   "cb"     = 20,                     # sd (slab) for coefficient prior
-  "pi.ga"  = 0.02, #0.5, ga.pi,      # prior variable selection probability for standard Cox models
+  "pi.ga"  = 0.02,                   # prior variable selection probability for standard Cox models
   "nu0"    = 0.05,                   # hyperparameter in graphical model
   "nu1"    = 5,                      # hyperparameter in graphical model
   "lambda" = 3,                      # hyperparameter in graphical model

@@ -148,7 +148,7 @@ func_MCMC <- function(survObj, priorPara, initial,
   
   for (M in 1:nIter) {
     
-    if (method %in% c("CoxBVSSL", "Sub-struct") && !MRF_G) {
+    if (method %in% c("CoxBVSSL", "Sub-struct")) {
       # update graph and precision matrix
       network <- func_MCMC_graph(survObj, priorPara, ini, S, method, MRF_2b)
 
@@ -171,7 +171,7 @@ func_MCMC <- function(survObj, priorPara, initial,
 
     # update increments in cumulative hazards
     #h <- ini$h <- UpdateBH(survObj, priorPara, ini, S, method)
-    if (S == 1) {
+    if (S == 1 && MRF_G) {
       h <- ini$h <- as.vector(updateBH_cpp(survObj$X, ini$beta.ini, 
                                  priorPara$J, priorPara$ind.r_d, 
                                  priorPara$hPriorSh, priorPara$d, priorPara$c0))
@@ -188,7 +188,7 @@ func_MCMC <- function(survObj, priorPara, initial,
     log.lh <- profJpost$loglike
     
     if (M > burnin) {
-      if (S == 1) {
+      if (S == 1  && MRF_G) {
         mcmcOutcome$gamma.margin <- mcmcOutcome$gamma.margin + gamma.ini
         mcmcOutcome$beta.margin <- mcmcOutcome$beta.margin + beta.ini
       } else {
@@ -257,7 +257,7 @@ func_MCMC <- function(survObj, priorPara, initial,
   } # the end of MCMC sampling
   close(pb) # Close the connection of progress bar
   
-  if (S == 1) {
+  if (S == 1 && MRF_G) {
     mcmcOutcome$gamma.margin <- mcmcOutcome$gamma.margin / (nIter - burnin)
     mcmcOutcome$beta.margin <- mcmcOutcome$beta.margin / (nIter - burnin)
   } else {

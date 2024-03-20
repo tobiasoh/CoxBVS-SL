@@ -79,7 +79,7 @@ plot.BayesSurv <- function(x, type = "mean", interval = TRUE,
     stop("Argument 'interval' must be a logical value!")
   }
   
-  if (x$input$S > 1) {
+  if (x$input$S > 1 || !x$input$MRF.G) {
     x$output$beta.p <- x$output$beta.p[[subgroup]]
   }
 

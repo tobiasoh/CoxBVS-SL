@@ -17,7 +17,9 @@
 #' @param Data a list containing observed data from \code{n} subjects;
 #' \code{t}, \code{di}, \code{X}. See details for more information
 #' @param model.type a method option from 
-#' \code{c("Pooled", "CoxBVSSL", "Sub-struct")}
+#' \code{c("Pooled", "CoxBVSSL", "Sub-struct")}. To enable graphical learning 
+#' for "Pooled" model, please specify \code{list(Data)}, 
+#' \code{model.type="Sub-struct"} and \code{MRF.G=FALSE}!
 #' @param MRF2b logical value. \code{MRF2b = TRUE} means two different 
 #' hyperparameters b in MRF prior (values b01 and b02) and \code{MRF2b = FALSE} 
 #' means one hyperparamter b in MRF prior
@@ -162,7 +164,7 @@ BayesSurv <- function(Data,
   
   # set hyperparamters of all piors
   
-  if( model.type == "Sub-struct" ) { 
+  if( model.type == "Sub-struct" && S > 1) { 
     MRF2b <- TRUE; 
     #b02 = 0
     priorPara$b <- priorPara$b[1]
@@ -267,7 +269,7 @@ BayesSurv <- function(Data,
     output_graph_para
   )
   
-  if (S == 1) {
+  if (S == 1 && MRF.G) {
     ret$output$survObj <- list("t" = Data$t, 
                                "di" = Data$di,
                                "lp.mean" = NULL,
