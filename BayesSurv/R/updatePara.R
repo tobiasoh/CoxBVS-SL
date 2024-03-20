@@ -135,102 +135,6 @@ UpdateGamma <- function(sobj, priorPara, ini, S, method, MRF_2b) {
 
 ####
 
-# Helper function for "UpdateRP.lee11" function.
-
-UpdateRP.lee11.helper <- function(n, p, x, J, ind.r, ind.d, ind.r_d, be.ini,
-                                  ga.ini, h, tau, cb) {
-  acceptl <- rep(0, p)
-
-  for (j in 1:p) {
-    sd.be <- tau * ifelse(ga.ini[j] == 1, cb, 1)
-
-    xbeta <- apply(x * matrix(rep(be.ini, n), n, p, byrow = T), 1, sum)
-    xbeta[xbeta > 700] <- 700
-    exp.xbeta <- exp(xbeta)
-    x.exp.xbeta <- x[, j] * exp.xbeta
-    exp.xbeta.mat <- matrix(rep(exp.xbeta, J), n, J)
-    x.exp.xbeta.mat <- matrix(rep(x.exp.xbeta, J), n, J)
-    D1.1st <- -h * colSums(x.exp.xbeta.mat * ind.r_d)
-
-    h.mat <- matrix(rep(h, n), n, J, byrow = T)
-    h.exp.xbeta.mat <- -h.mat * exp.xbeta.mat
-    h.exp.xbeta.mat[h.exp.xbeta.mat > -10^(-7)] <- -10^(-7)
-    exp.h.exp.xbeta.mat <- exp(h.exp.xbeta.mat)
-
-    D1.2nd.den <- 1 - exp.h.exp.xbeta.mat
-    D1.2nd.num <- exp.h.exp.xbeta.mat * x.exp.xbeta.mat
-    D1.2nd <- h * colSums(D1.2nd.num / D1.2nd.den * ind.d)
-    D1 <- sum(D1.1st + D1.2nd) - 1 / sd.be^2 * be.ini[j]
-
-    x.sq.exp.xbeta <- x[, j]^2 * exp.xbeta
-    x.sq.exp.xbeta.mat <- matrix(rep(x.sq.exp.xbeta, J), n, J)
-
-    D2.1st <- -h * colSums(x.sq.exp.xbeta.mat * ind.r_d)
-    D2.2nd.den <- D1.2nd.den^2
-    D2.2nd.num <- exp.h.exp.xbeta.mat * x.sq.exp.xbeta.mat * (1 - exp.h.exp.xbeta.mat + h.exp.xbeta.mat)
-    D2.2nd <- h * colSums(D2.2nd.num / D2.2nd.den * ind.d)
-    D2 <- sum(D2.1st + D2.2nd) - 1 / sd.be^2
-
-    be.prop.me <- be.ini[j] - D1 / D2
-    be.prop.var <- -2.4^2 / D2
-    be.prop <- be.ini
-    be.prop[j] <- rnorm(1, mean = be.prop.me, sd = sqrt(be.prop.var))
-
-    xbeta.prop <- xbeta - x[, j] * be.ini[j] + x[, j] * be.prop[j]
-    xbeta.prop[xbeta.prop > 700] <- 700
-    exp.xbeta.prop <- exp(xbeta.prop)
-    x.exp.xbeta.prop <- x[, j] * exp.xbeta.prop
-    exp.xbeta.prop.mat <- matrix(rep(exp.xbeta.prop, J), n, J)
-    x.exp.xbeta.prop.mat <- matrix(rep(x.exp.xbeta.prop, J), n, J)
-    D1.1st.prop <- -h * colSums(x.exp.xbeta.prop.mat * ind.r_d)
-
-    h.exp.xbeta.prop.mat <- -h.mat * exp.xbeta.prop.mat
-    h.exp.xbeta.prop.mat[h.exp.xbeta.prop.mat > -10^(-7)] <- -10^(-7)
-    exp.h.exp.xbeta.prop.mat <- exp(h.exp.xbeta.prop.mat)
-
-    D1.2nd.den.prop <- 1 - exp.h.exp.xbeta.prop.mat
-    D1.2nd.num.prop <- exp.h.exp.xbeta.prop.mat * x.exp.xbeta.prop.mat
-    D1.2nd.prop <- h * colSums(D1.2nd.num.prop / D1.2nd.den.prop * ind.d)
-    D1.prop <- sum(D1.1st.prop + D1.2nd.prop) - 1 / sd.be^2 * be.prop[j]
-
-    x.sq.exp.xbeta.prop <- x[, j]^2 * exp.xbeta.prop
-    x.sq.exp.xbeta.prop.mat <- matrix(rep(x.sq.exp.xbeta.prop, J), n, J)
-
-    D2.1st.prop <- -h * colSums(x.sq.exp.xbeta.prop.mat * ind.r_d)
-    D2.2nd.den.prop <- D1.2nd.den.prop^2
-    D2.2nd.num.prop <- exp.h.exp.xbeta.prop.mat * x.sq.exp.xbeta.prop.mat * (1 - exp.h.exp.xbeta.prop.mat + h.exp.xbeta.prop.mat)
-    D2.2nd.prop <- h * colSums(D2.2nd.num.prop / D2.2nd.den.prop * ind.d)
-    D2.prop <- sum(D2.1st.prop + D2.2nd.prop) - 1 / sd.be^2
-
-    be.prop.me.ini <- be.prop[j] - D1.prop / D2.prop
-    be.prop.var.ini <- -2.4^2 / D2.prop
-
-    first.sum <- colSums(exp.xbeta.mat * ind.r_d)
-    second.sum <- colSums(log(D1.2nd.den) * ind.d)
-    loglh.ini <- sum(-h * first.sum + second.sum)
-
-    first.sum.prop <- colSums(exp.xbeta.prop.mat * ind.r_d)
-    second.sum.prop <- colSums(log(D1.2nd.den.prop) * ind.d)
-    loglh.prop <- sum(-h * first.sum.prop + second.sum.prop)
-
-    logprior.prop <- dnorm(be.prop[j], mean = 0, sd = sd.be, log = TRUE)
-    logprior.ini <- dnorm(be.ini[j], mean = 0, sd = sd.be, log = TRUE)
-    logprop.prop <- dnorm(be.prop[j], mean = be.prop.me.ini, sd = sqrt(be.prop.var.ini), log = TRUE)
-    logprop.ini <- dnorm(be.ini[j], mean = be.prop.me, sd = sqrt(be.prop.var), log = TRUE)
-
-    logR <- loglh.prop - loglh.ini + logprior.prop - logprior.ini + logprop.ini - logprop.prop
-    u <- log(runif(1)) < logR
-    if (u == 1) {
-      be.ini[j] <- be.prop[j]
-      acceptl[j] <- acceptl[j] + 1
-    }
-  }
-  return(list("be.ini" = be.ini, "acceptl" = acceptl))
-}
-# the end of "UpdateRP.lee11.helper" function
-
-####
-
 # Update joint posterior distribution
 
 calJpost <- function(sobj, priorPara, ini, S, method, MRF_2b) {
@@ -350,6 +254,102 @@ calJpost <- function(sobj, priorPara, ini, S, method, MRF_2b) {
   return(list(loglike = loglike, logjpost = logjpost))
 }
 
+
+####
+
+# # Helper function for "UpdateRP.lee11" function.
+# 
+# UpdateRP.lee11.helper <- function(n, p, x, J, ind.r, ind.d, ind.r_d, be.ini,
+#                                   ga.ini, h, tau, cb) {
+#   acceptl <- rep(0, p)
+#   
+#   for (j in 1:p) {
+#     sd.be <- tau * ifelse(ga.ini[j] == 1, cb, 1)
+#     
+#     xbeta <- apply(x * matrix(rep(be.ini, n), n, p, byrow = T), 1, sum)
+#     xbeta[xbeta > 700] <- 700
+#     exp.xbeta <- exp(xbeta)
+#     x.exp.xbeta <- x[, j] * exp.xbeta
+#     exp.xbeta.mat <- matrix(rep(exp.xbeta, J), n, J)
+#     x.exp.xbeta.mat <- matrix(rep(x.exp.xbeta, J), n, J)
+#     D1.1st <- -h * colSums(x.exp.xbeta.mat * ind.r_d)
+#     
+#     h.mat <- matrix(rep(h, n), n, J, byrow = T)
+#     h.exp.xbeta.mat <- -h.mat * exp.xbeta.mat
+#     h.exp.xbeta.mat[h.exp.xbeta.mat > -10^(-7)] <- -10^(-7)
+#     exp.h.exp.xbeta.mat <- exp(h.exp.xbeta.mat)
+#     
+#     D1.2nd.den <- 1 - exp.h.exp.xbeta.mat
+#     D1.2nd.num <- exp.h.exp.xbeta.mat * x.exp.xbeta.mat
+#     D1.2nd <- h * colSums(D1.2nd.num / D1.2nd.den * ind.d)
+#     D1 <- sum(D1.1st + D1.2nd) - 1 / sd.be^2 * be.ini[j]
+#     
+#     x.sq.exp.xbeta <- x[, j]^2 * exp.xbeta
+#     x.sq.exp.xbeta.mat <- matrix(rep(x.sq.exp.xbeta, J), n, J)
+#     
+#     D2.1st <- -h * colSums(x.sq.exp.xbeta.mat * ind.r_d)
+#     D2.2nd.den <- D1.2nd.den^2
+#     D2.2nd.num <- exp.h.exp.xbeta.mat * x.sq.exp.xbeta.mat * (1 - exp.h.exp.xbeta.mat + h.exp.xbeta.mat)
+#     D2.2nd <- h * colSums(D2.2nd.num / D2.2nd.den * ind.d)
+#     D2 <- sum(D2.1st + D2.2nd) - 1 / sd.be^2
+#     
+#     be.prop.me <- be.ini[j] - D1 / D2
+#     be.prop.var <- -2.4^2 / D2
+#     be.prop <- be.ini
+#     be.prop[j] <- rnorm(1, mean = be.prop.me, sd = sqrt(be.prop.var))
+#     
+#     xbeta.prop <- xbeta - x[, j] * be.ini[j] + x[, j] * be.prop[j]
+#     xbeta.prop[xbeta.prop > 700] <- 700
+#     exp.xbeta.prop <- exp(xbeta.prop)
+#     x.exp.xbeta.prop <- x[, j] * exp.xbeta.prop
+#     exp.xbeta.prop.mat <- matrix(rep(exp.xbeta.prop, J), n, J)
+#     x.exp.xbeta.prop.mat <- matrix(rep(x.exp.xbeta.prop, J), n, J)
+#     D1.1st.prop <- -h * colSums(x.exp.xbeta.prop.mat * ind.r_d)
+#     
+#     h.exp.xbeta.prop.mat <- -h.mat * exp.xbeta.prop.mat
+#     h.exp.xbeta.prop.mat[h.exp.xbeta.prop.mat > -10^(-7)] <- -10^(-7)
+#     exp.h.exp.xbeta.prop.mat <- exp(h.exp.xbeta.prop.mat)
+#     
+#     D1.2nd.den.prop <- 1 - exp.h.exp.xbeta.prop.mat
+#     D1.2nd.num.prop <- exp.h.exp.xbeta.prop.mat * x.exp.xbeta.prop.mat
+#     D1.2nd.prop <- h * colSums(D1.2nd.num.prop / D1.2nd.den.prop * ind.d)
+#     D1.prop <- sum(D1.1st.prop + D1.2nd.prop) - 1 / sd.be^2 * be.prop[j]
+#     
+#     x.sq.exp.xbeta.prop <- x[, j]^2 * exp.xbeta.prop
+#     x.sq.exp.xbeta.prop.mat <- matrix(rep(x.sq.exp.xbeta.prop, J), n, J)
+#     
+#     D2.1st.prop <- -h * colSums(x.sq.exp.xbeta.prop.mat * ind.r_d)
+#     D2.2nd.den.prop <- D1.2nd.den.prop^2
+#     D2.2nd.num.prop <- exp.h.exp.xbeta.prop.mat * x.sq.exp.xbeta.prop.mat * (1 - exp.h.exp.xbeta.prop.mat + h.exp.xbeta.prop.mat)
+#     D2.2nd.prop <- h * colSums(D2.2nd.num.prop / D2.2nd.den.prop * ind.d)
+#     D2.prop <- sum(D2.1st.prop + D2.2nd.prop) - 1 / sd.be^2
+#     
+#     be.prop.me.ini <- be.prop[j] - D1.prop / D2.prop
+#     be.prop.var.ini <- -2.4^2 / D2.prop
+#     
+#     first.sum <- colSums(exp.xbeta.mat * ind.r_d)
+#     second.sum <- colSums(log(D1.2nd.den) * ind.d)
+#     loglh.ini <- sum(-h * first.sum + second.sum)
+#     
+#     first.sum.prop <- colSums(exp.xbeta.prop.mat * ind.r_d)
+#     second.sum.prop <- colSums(log(D1.2nd.den.prop) * ind.d)
+#     loglh.prop <- sum(-h * first.sum.prop + second.sum.prop)
+#     
+#     logprior.prop <- dnorm(be.prop[j], mean = 0, sd = sd.be, log = TRUE)
+#     logprior.ini <- dnorm(be.ini[j], mean = 0, sd = sd.be, log = TRUE)
+#     logprop.prop <- dnorm(be.prop[j], mean = be.prop.me.ini, sd = sqrt(be.prop.var.ini), log = TRUE)
+#     logprop.ini <- dnorm(be.ini[j], mean = be.prop.me, sd = sqrt(be.prop.var), log = TRUE)
+#     
+#     logR <- loglh.prop - loglh.ini + logprior.prop - logprior.ini + logprop.ini - logprop.prop
+#     u <- log(runif(1)) < logR
+#     if (u == 1) {
+#       be.ini[j] <- be.prop[j]
+#       acceptl[j] <- acceptl[j] + 1
+#     }
+#   }
+#   return(list("be.ini" = be.ini, "acceptl" = acceptl))
+# }
+# # the end of "UpdateRP.lee11.helper" function
 
 # # Update regression coefficients according to Lee et al. (2011)
 #

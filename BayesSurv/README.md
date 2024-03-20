@@ -60,7 +60,7 @@ priorParaPooled = list(
 ## run Bayesian Cox with graph-structured priors
 library("BayesSurv")
 fit = BayesSurv(survObj=dataset, priorPara=priorParaPooled, 
-                initial=initial, nIter=100, seed=123)
+                initial=initial, nIter=100)
 
 ## show posterior mean of coefficients and 95% credible intervals
 library(ggplot2)
@@ -128,7 +128,7 @@ dataset2 <- simData[1:2]
 dataset2 <- lapply(dataset2, setNames, c("X", "t", "di", "X.unsc", "trueB"))
 fit = BayesSurv(Data=dataset2, priorPara=priorParaPooled, 
                 model.type="CoxBVSSL", MRF.G=TRUE,
-                initial=initial, nIter=10, burnin=5, seed=123)
+                initial=initial, nIter=10, burnin=5)
 ```
 
 ## References
