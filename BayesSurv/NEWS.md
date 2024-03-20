@@ -1,9 +1,9 @@
 # TODO list
 
-* continue to help files
+* continue to improve help files
 * fix hard-coding parts
 * add more functions for the visualization of results
-* add graphical learning for the 'Pooled' model
+* add graphical learning for the 'Pooled' model?
 
 # BayesSurv 0.0-4
 

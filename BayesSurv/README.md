@@ -18,11 +18,17 @@ remotes::install_github("tobiasoh/master_thesis/BayesSurv")
 ### Simulate data
 
 ```r
+library("survival")
+library("GGally")
+library("BayesSurv")
+
 # Load the example dataset
 data("simData", package = "BayesSurv")
+
 dataset = list("X" = simData[[1]]$X, 
                "t" = simData[[1]]$time,
                "di" = simData[[1]]$status)
+
 ```
 
 
@@ -40,8 +46,8 @@ priorParaPooled = list(
   #"eta0"   = eta0,                   # prior of baseline hazard
   #"kappa0" = kappa0,                 # prior of baseline hazard
   "c0"     = 2,                      # prior of baseline hazard
-  "tau"    = 0.0375,                 # sd for coefficient prior
-  "cb"     = 20,                     # sd for coefficient prior
+  "tau"    = 0.0375,                 # sd (spike) for coefficient prior
+  "cb"     = 20,                     # sd (slab) for coefficient prior
   "pi.ga"  = 0.02, #0.5, ga.pi,      # prior variable selection probability for standard Cox models
   "nu0"    = 0.05,                   # hyperparameter in graphical model
   "nu1"    = 5,                      # hyperparameter in graphical model
@@ -88,7 +94,7 @@ predict(fit, survObj.new = dataset)
 ```
 ```
     Null.model Bayesian.Cox
-IBS 0.09147208   0.03709157
+IBS 0.09147208   0.03797003
 ```
 
 ### Predict survival probabilities and cumulative hazards
@@ -99,18 +105,18 @@ The function `BayesSurv::predict()` can estimate the survival probabilities and 
 predict(fit, survObj.new = dataset, type = c("cumhazard", "survival"))
 ```
 ```
-       observation times cumhazard  survival
-    1:           1   3.3  2.60e-04  1.00e+00
-    2:           2   3.3  4.12e-01  6.62e-01
-    3:           3   3.3  3.41e-06  1.00e+00
-    4:           4   3.3  1.83e-02  9.82e-01
-    5:           5   3.3  4.61e-04  1.00e+00
-   ---                                      
- 9996:          96   9.5  8.53e+00  1.97e-04
- 9997:          97   9.5  5.46e+02 9.82e-238
- 9998:          98   9.5  1.64e+00  1.93e-01
- 9999:          99   9.5  2.92e+00  5.40e-02
-10000:         100   9.5  1.46e+01  4.37e-07
+       observation times cumhazard survival
+    1:           1   3.3  1.82e-04 1.00e+00
+    2:           2   3.3  2.42e-01 7.85e-01
+    3:           3   3.3  2.93e-06 1.00e+00
+    4:           4   3.3  5.40e-03 9.95e-01
+    5:           5   3.3  8.52e-04 9.99e-01
+   ---                                     
+ 9996:          96   9.5  1.38e+01 9.68e-07
+ 9997:          97   9.5  9.71e+01 6.94e-43
+ 9998:          98   9.5  1.35e+00 2.58e-01
+ 9999:          99   9.5  2.24e+00 1.06e-01
+10000:         100   9.5  8.62e+00 1.81e-04
 ```
 
 ### Run a Bayesian Cox model with subgroups

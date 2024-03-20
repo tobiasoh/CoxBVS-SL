@@ -15,7 +15,6 @@ func_MCMC(
   method,
   MRF_2b,
   MRF_G,
-  seed,
   output_graph_para
 )
 }
@@ -45,7 +44,9 @@ Default is 0}
 is provided in the argument \code{priorPara}, and \code{MRF_G = FALSE} is to 
 use graphical model for leanring the MRF graph}
 
-\item{seed}{random seed}
+\item{output_graph_para}{allow (\code{TRUE}) or suppress (\code{FALSE}) the 
+output for parameters 'G', 'V', 'C' and 'Sig' in the graphical model 
+if \code{MRF.G = FALSE}}
 }
 \value{
 A list object

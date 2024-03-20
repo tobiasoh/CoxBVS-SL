@@ -24,7 +24,9 @@
 #' @param MRF_G logical value. \code{MRF_G = TRUE} is to fix the MRF graph which 
 #' is provided in the argument \code{priorPara}, and \code{MRF_G = FALSE} is to 
 #' use graphical model for leanring the MRF graph
-#' @param seed random seed
+#' @param output_graph_para allow (\code{TRUE}) or suppress (\code{FALSE}) the 
+#' output for parameters 'G', 'V', 'C' and 'Sig' in the graphical model 
+#' if \code{MRF.G = FALSE}
 #'
 #' @return A list object
 #'
@@ -33,7 +35,7 @@
 func_MCMC <- function(survObj, priorPara, initial, 
                       nIter, thin, burnin, 
                       S, method, MRF_2b, MRF_G, 
-                      seed, output_graph_para) {
+                      output_graph_para) {
   # prior parameters for grouped data likelihood of Cox model
   if (method != "Pooled") {
     s <- J <- intv <- vector("list", S)
@@ -117,7 +119,6 @@ func_MCMC <- function(survObj, priorPara, initial,
 
   # save prior parameters in MCMC output
   mcmcOutcome$s <- priorPara$s
-  mcmcOutcome$seed <- seed
   mcmcOutcome$eta0 <- priorPara$eta0
   mcmcOutcome$kappa0 <- priorPara$kappa0
   mcmcOutcome$c0 <- priorPara$c0

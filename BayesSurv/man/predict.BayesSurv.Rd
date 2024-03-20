@@ -48,6 +48,7 @@ BayesSurv
 library("survival")
 library("GGally")
 library("BayesSurv")
+set.seed(123)
 
 # Load the example dataset
 data("simData", package = "BayesSurv")
@@ -57,30 +58,25 @@ dataset = list("X" = simData[[1]]$X,
                "di" = simData[[1]]$status)
 
 # Initial value: null model without covariates
-log.like  = coxph( Surv(dataset$t, dataset$di, type = c('right')) ~ 1 )$loglik 
-initial = list("gamma.ini" = rep(0, ncol(dataset$X)), 
-               "beta.ini" = rep(0, ncol(dataset$X)), 
-               "log.like.ini" = log.like)
-# Prior parameters
+initial = list("gamma.ini" = rep(0, ncol(dataset$X)))
+# Hyperparameters
 priorParaPooled = list(
-  #"eta0"   = eta0,                   # prior of baseline hazard
-  #"kappa0" = kappa0,                 # prior of baseline hazard
   "c0"     = 2,                      # prior of baseline hazard
   "tau"    = 0.0375,                 # sd for coefficient prior
   "cb"     = 20,                     # sd for coefficient prior
-  "pi.ga"  = 0.02, #0.5, ga.pi,      # prior variable selection probability for standard Cox models
+  "pi.ga"  = 0.02,                   # prior variable selection probability for standard Cox models
   "nu0"    = 0.05,                   # hyperparameter in graphical model
   "nu1"    = 5,                      # hyperparameter in graphical model
   "lambda" = 3,                      # hyperparameter in graphical model
-  "a"      = -4, #a0,                # hyperparameter in MRF prior
-  "b"      = 0.1, #b0,               # hyperparameter in MRF prior
+  "a"      = -4,                     # hyperparameter in MRF prior
+  "b"      = 0.1,                    # hyperparameter in MRF prior
   "G"      = simData$G               # hyperparameter in MRF prior
 )    
 
 \donttest{
 # run Bayesian Cox with graph-structured priors
 fit = BayesSurv(Data=dataset, priorPara=priorParaPooled, 
-                initial=initial, nIter=100, seed=123)
+                initial=initial, nIter=100)
 # predict survival probabilities of the train data
 predict(fit, survObj.new=dataset)
 }

@@ -33,7 +33,6 @@
 #' @param burnin number of iterations to discard at the start of the chain.
 #' Default is 0
 #' @param thin thinning MCMC intermediate results to be stored
-#' @param seed random seed
 #' @param output_graph_para allow (\code{TRUE}) or suppress (\code{FALSE}) the 
 #' output for parameters 'G', 'V', 'C' and 'Sig' in the graphical model 
 #' if \code{MRF.G = FALSE}
@@ -58,6 +57,7 @@
 #' library("survival")
 #' library("GGally")
 #' library("BayesSurv")
+#' set.seed(123)
 #' 
 #' # Load the example dataset
 #' data("simData", package = "BayesSurv")
@@ -67,30 +67,25 @@
 #'                "di" = simData[[1]]$status)
 #' 
 #' # Initial value: null model without covariates
-#' log.like  = coxph( Surv(dataset$t, dataset$di, type = c('right')) ~ 1 )$loglik 
-#' initial = list("gamma.ini" = rep(0, ncol(dataset$X)), 
-#'                "beta.ini" = rep(0, ncol(dataset$X)), 
-#'                "log.like.ini" = log.like)
-#' # Prior parameters
+#' initial = list("gamma.ini" = rep(0, ncol(dataset$X)))
+#' # Hyperparameters
 #' priorParaPooled = list(
-#'   #"eta0"   = eta0,                   # prior of baseline hazard
-#'   #"kappa0" = kappa0,                 # prior of baseline hazard
 #'   "c0"     = 2,                      # prior of baseline hazard
-#'   "tau"    = 0.0375,                 # sd for coefficient prior
-#'   "cb"     = 20,                     # sd for coefficient prior
-#'   "pi.ga"  = 0.02, #0.5, ga.pi,      # prior variable selection probability for standard Cox models
+#'   "tau"    = 0.0375,                 # sd (spike) for coefficient prior
+#'   "cb"     = 20,                     # sd (spike) for coefficient prior
+#'   "pi.ga"  = 0.02,                   # prior variable selection probability for standard Cox models
 #'   "nu0"    = 0.05,                   # hyperparameter in graphical model
 #'   "nu1"    = 5,                      # hyperparameter in graphical model
 #'   "lambda" = 3,                      # hyperparameter in graphical model
-#'   "a"      = -4, #a0,                # hyperparameter in MRF prior
-#'   "b"      = 0.1, #b0,               # hyperparameter in MRF prior
+#'   "a"      = -4,                     # hyperparameter in MRF prior
+#'   "b"      = 0.1,                    # hyperparameter in MRF prior
 #'   "G"      = simData$G               # hyperparameter in MRF prior
 #' )    
 #'
 #' \donttest{
 #' # run Bayesian Cox with graph-structured priors
 #' fit = BayesSurv(Data=dataset, priorPara=priorParaPooled, 
-#'                 initial=initial, nIter=100, seed=123)
+#'                 initial=initial, nIter=100)
 #'
 #' # show posterior mean of coefficients and 95% credible intervals
 #' plot(fit) + 
@@ -109,7 +104,6 @@ BayesSurv <- function(Data,
                       nIter = 1,
                       burnin = 0,
                       thin = 1,
-                      seed = 123,
                       output_graph_para = FALSE) {
 
   p = ifelse(is.list(Data[[1]]), NCOL(Data[[1]]$X), NCOL(Data$X))  # same number of covariates p in all subgroups
@@ -168,8 +162,15 @@ BayesSurv <- function(Data,
   
   # set hyperparamters of all piors
   
-  if( model.type == "Sub-struct" ){ MRF2b = TRUE; b02 = 0 }
-  if( MRF2b ){ b0 = c(b01, b02) }
+  if( model.type == "Sub-struct" ) { 
+    MRF2b <- TRUE; 
+    #b02 = 0
+    priorPara$b <- priorPara$b[1]
+  }
+  if( MRF2b ) { 
+    #b0 = c(b01, b02) 
+    b0 <- priorPara$b
+  }
   
   # defining parameters for the main MCMC simulation function
   
@@ -216,7 +217,7 @@ BayesSurv <- function(Data,
       
       # variances for prior of precision matrices
       v_ini                     = priorPara$V1
-      v_ini[ which(G_ss == 0) ] = nu0^2
+      v_ini[ which(G_ss == 0) ] = priorPara$nu0^2
       V.ini                     = rep( list(v_ini), S )
     }
     
@@ -250,7 +251,6 @@ BayesSurv <- function(Data,
   ret$input["model.type"] <- model.type
   ret$input["MRF2b"] <- MRF2b
   ret$input["MRF.G"] <- MRF.G
-  ret$input["seed"] <- seed
   ret$input$priorPara <- priorPara
 
   ret$output <- func_MCMC(
@@ -264,7 +264,6 @@ BayesSurv <- function(Data,
     method = model.type, 
     MRF_2b = MRF2b,
     MRF_G = MRF.G,
-    seed = seed,
     output_graph_para
   )
   
