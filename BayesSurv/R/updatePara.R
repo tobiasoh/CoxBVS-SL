@@ -12,7 +12,7 @@
 #' @param ini a list containing prior parameters' initial values
 #' @param S the number of subgroups
 #' @param method a method option from 
-#' \code{c("Pooled", "CoxBVSSL", "Sub-struct", "CoxBVSSL", "Sub-struct")}
+#' \code{c("Pooled", "CoxBVSSL", "Sub-struct", "Subgroup")}
 #' @param MRF_2b two different b in MRF prior for subgraphs G_ss and G_rs
 #'
 #' @return An object of ...
@@ -277,57 +277,6 @@ UpdateRP.lee11.helper <- function(n, p, x, J, ind.r, ind.d, ind.r_d, be.ini,
 #   return(list(beta.ini = beta.ini, acceptlee = acceptlee))
 # }
 # # the end of "UpdateRP.lee11" function
-
-####
-
-# Update increment in cumulative baseline hazard
-
-UpdateBH <- function(sobj, priorPara, ini, S, method) {
-  p <- sobj$p
-  c0 <- priorPara$c0
-
-  if (method == "Pooled") {
-    n <- sobj$n
-    X <- sobj$X
-    J <- priorPara$J
-    ind.r_d <- priorPara$ind.r_d
-    d <- priorPara$d
-    hPriorSh <- priorPara$hPriorSh
-    beta.ini <- ini$beta.ini
-
-    xbeta <- apply(X * matrix(rep(beta.ini, n), n, p, byrow = T), 1, sum)
-    xbeta[xbeta > 700] <- 700
-    exp.xbeta <- exp(xbeta)
-    exp.xbeta.mat <- matrix(rep(exp.xbeta, J), n, J)
-    h.rate <- apply(exp.xbeta.mat * ind.r_d, 2, sum) + c0
-
-    H <- rgamma(J, shape = hPriorSh + d, rate = h.rate)
-  } else {
-    H <- vector("list", S)
-
-    for (g in 1:S) { # loop through subgroups
-
-      n <- sobj$n[[g]]
-      X <- sobj$X[[g]]
-      J <- priorPara$J[[g]]
-      ind.r_d <- priorPara$ind.r_d[[g]]
-      d <- priorPara$d[[g]]
-      hPriorSh <- priorPara$hPriorSh[[g]]
-      beta.ini <- ini$beta.ini[[g]]
-
-      xbeta <- apply(X * matrix(rep(beta.ini, n), n, p, byrow = T), 1, sum)
-      xbeta[xbeta > 700] <- 700
-      exp.xbeta <- exp(xbeta)
-      exp.xbeta.mat <- matrix(rep(exp.xbeta, J), n, J)
-      h.rate <- apply(exp.xbeta.mat * ind.r_d, 2, sum) + c0
-
-      H[[g]] <- rgamma(J, shape = hPriorSh + d, rate = h.rate)
-    }
-  }
-
-  return(H)
-}
-# the end of "UpdateBH" function
 
 ####
 

@@ -10,6 +10,7 @@
   type = "brier",
   method = "mean",
   times = NULL,
+  subgroup = 1,
   ...
 )
 }
@@ -21,8 +22,8 @@ components \code{t}, \code{di}, \code{x}. If \code{type} is among
 \code{c("hazard", "cumhazard", "survival")}, only \code{survObj.new$X} is 
 needed.}
 
-\item{type}{option to chose for predicting survival probabilities
-(\code{type="probability"}) and brier scores (\code{type="brier"})}
+\item{type}{option to chose for predicting brier scores with \code{type="brier"} 
+or one of \code{type=c("brier", "hazard", "cumhazard", "survival")})}
 
 \item{method}{option to use the posterior mean (\code{"mean"}) of coefficients
 for prediction or Bayesian model averaging (\code{"BMA"}) for prediction}
@@ -30,6 +31,9 @@ for prediction or Bayesian model averaging (\code{"BMA"}) for prediction}
 \item{times}{time points at which to evaluate the risks. If \code{NULL}
 (default), the event/censoring times are used. If \code{type="brier"}, the
 largest one of the \code{times} is used}
+
+\item{subgroup}{index of the subgroup in \code{survObj.new} for prediction. 
+Default value is 1}
 
 \item{\dots}{not used}
 }
@@ -75,7 +79,7 @@ priorParaPooled = list(
 
 \donttest{
 # run Bayesian Cox with graph-structured priors
-fit = BayesSurv(survObj=dataset, priorPara=priorParaPooled, 
+fit = BayesSurv(Data=dataset, priorPara=priorParaPooled, 
                 initial=initial, nIter=100, seed=123)
 # predict survival probabilities of the train data
 predict(fit, survObj.new=dataset)

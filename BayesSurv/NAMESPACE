@@ -3,6 +3,7 @@
 S3method(plot,BayesSurv)
 S3method(predict,BayesSurv)
 export(BayesSurv)
+export(UpdateBH)
 export(UpdateGamma)
 export(UpdateRPlee11)
 export(func_MCMC)

@@ -16,7 +16,7 @@ UpdateRPlee11(sobj, priorPara, ini, S, method)
 \item{S}{the number of subgroups}
 
 \item{method}{a method option from 
-\code{c("Pooled", "CoxBVSSL", "Sub-struct", "CoxBVSSL", "Sub-struct")}}
+\code{c("Pooled", "CoxBVSSL", "Sub-struct", "Subgroup")}}
 }
 \value{
 An object of ...

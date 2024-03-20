@@ -71,6 +71,60 @@ plot(fit) +
 <img src="man/figures/README_plot_beta.png" width="100%" />
 
 
+### Plot time-dependent Brier scores
+
+The function `BayesSurv::plotBrier()` can show the time-dependent Brier scores based on posterior mean of coefficients or Bayesian model averaging.
+
+```r
+plotBrier(fit, , survObj.new = dataset)
+```
+
+<img src="man/figures/README_plot_brier.png" width="50%" />
+
+The integrated Brier score (IBS) can be obtained by the function `BayesSurv::predict()`.
+
+```r
+predict(fit, survObj.new = dataset)
+```
+```
+    Null.model Bayesian.Cox
+IBS 0.09147208   0.03709157
+```
+
+### Predict survival probabilities and cumulative hazards
+
+The function `BayesSurv::predict()` can estimate the survival probabilities and cumulative hazards.
+
+```r
+predict(fit, survObj.new = dataset, type = c("cumhazard", "survival"))
+```
+```
+       observation times cumhazard  survival
+    1:           1   3.3  2.60e-04  1.00e+00
+    2:           2   3.3  4.12e-01  6.62e-01
+    3:           3   3.3  3.41e-06  1.00e+00
+    4:           4   3.3  1.83e-02  9.82e-01
+    5:           5   3.3  4.61e-04  1.00e+00
+   ---                                      
+ 9996:          96   9.5  8.53e+00  1.97e-04
+ 9997:          97   9.5  5.46e+02 9.82e-238
+ 9998:          98   9.5  1.64e+00  1.93e-01
+ 9999:          99   9.5  2.92e+00  5.40e-02
+10000:         100   9.5  1.46e+01  4.37e-07
+```
+
+### Run a Bayesian Cox model with subgroups
+
+```r
+# specify a fixed joint graph between two subgroups
+priorParaPooled$G <- Matrix::bdiag(simData$G, simData$G)
+dataset2 <- simData[1:2]
+dataset2 <- lapply(dataset2, setNames, c("X", "t", "di", "X.unsc", "trueB"))
+fit = BayesSurv(Data=dataset2, priorPara=priorParaPooled, 
+                model.type="CoxBVSSL", MRF.G=TRUE,
+                initial=initial, nIter=10, burnin=5, seed=123)
+```
+
 ## References
 
 > Katrin Madjar, Manuela Zucknick, Katja Ickstadt, Jörg Rahnenführer (2021).

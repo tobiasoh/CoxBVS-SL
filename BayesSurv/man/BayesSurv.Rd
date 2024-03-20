@@ -6,11 +6,39 @@
 \alias{BayesSurv-package}
 \title{Fit the Bayesian Cox Model}
 \usage{
-BayesSurv(survObj, priorPara, initial, nIter = 1, thin = 1, seed = 123)
+BayesSurv(
+  Data,
+  model.type = "Pooled",
+  MRF2b = FALSE,
+  MRF.G = TRUE,
+  g.ini = 0,
+  priorPara = NULL,
+  initial = NULL,
+  nIter = 1,
+  burnin = 0,
+  thin = 1,
+  seed = 123,
+  output_graph_para = FALSE
+)
 }
 \arguments{
-\item{survObj}{a list containing observed data from \code{n} subjects;
+\item{Data}{a list containing observed data from \code{n} subjects;
 \code{t}, \code{di}, \code{X}. See details for more information}
+
+\item{model.type}{a method option from 
+\code{c("Pooled", "CoxBVSSL", "Sub-struct")}}
+
+\item{MRF2b}{logical value. \code{MRF2b = TRUE} means two different 
+hyperparameters b in MRF prior (values b01 and b02) and \code{MRF2b = FALSE} 
+means one hyperparamter b in MRF prior}
+
+\item{MRF.G}{logical value. \code{MRF.G = TRUE} is to fix the MRF graph which 
+is provided in the argument \code{priorPara}, and \code{MRF.G = FALSE} is to 
+use graphical model for leanring the MRF graph}
+
+\item{g.ini}{initial values for latent edge inclusion indicators in graph, 
+should be a value in [0,1]. 0 or 1: set all random edges to 0 or 1; value in 
+(0,1): rate of indicators randomly set to 1, the remaining indicators are 0}
 
 \item{priorPara}{a list containing prior parameter values}
 
@@ -18,9 +46,16 @@ BayesSurv(survObj, priorPara, initial, nIter = 1, thin = 1, seed = 123)
 
 \item{nIter}{the number of iterations of the chain}
 
+\item{burnin}{number of iterations to discard at the start of the chain.
+Default is 0}
+
 \item{thin}{thinning MCMC intermediate results to be stored}
 
 \item{seed}{random seed}
+
+\item{output_graph_para}{allow (\code{TRUE}) or suppress (\code{FALSE}) the 
+output for parameters 'G', 'V', 'C' and 'Sig' in the graphical model 
+if \code{MRF.G = FALSE}}
 }
 \value{
 An object of class \code{BayesSurv} is saved as
@@ -79,7 +114,7 @@ priorParaPooled = list(
 
 \donttest{
 # run Bayesian Cox with graph-structured priors
-fit = BayesSurv(survObj=dataset, priorPara=priorParaPooled, 
+fit = BayesSurv(Data=dataset, priorPara=priorParaPooled, 
                 initial=initial, nIter=100, seed=123)
 
 # show posterior mean of coefficients and 95\% credible intervals

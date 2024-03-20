@@ -4,7 +4,7 @@
 \alias{plot.BayesSurv}
 \title{create a plot of estimated coefficients}
 \usage{
-\method{plot}{BayesSurv}(x, type = "mean", interval = TRUE, ...)
+\method{plot}{BayesSurv}(x, type = "mean", interval = TRUE, subgroup = 1, ...)
 }
 \arguments{
 \item{x}{an object of class \code{BayesSurv} or a matrix. If \code{x}
@@ -15,6 +15,8 @@ is a matrix, use \code{BayesSurv:::plot.BayesSurv(x)}}
 
 \item{interval}{logical argument to show 95\% credible intervals. Default
 is \code{TRUE}}
+
+\item{subgroup}{index of the subgroup for visualizing posterior coefficients}
 
 \item{...}{additional arguments sent to \code{ggplot2::geom_point()}}
 }
@@ -61,7 +63,7 @@ priorParaPooled = list(
 
 \donttest{
 # run Bayesian Cox with graph-structured priors
-fit = BayesSurv(survObj=dataset, priorPara=priorParaPooled, 
+fit = BayesSurv(Data=dataset, priorPara=priorParaPooled, 
                 initial=initial, nIter=100, seed=123)
 
 # show posterior mean of coefficients and 95\% credible intervals

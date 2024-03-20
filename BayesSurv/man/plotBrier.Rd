@@ -4,7 +4,13 @@
 \alias{plotBrier}
 \title{Time-dependent Brier scores (Not yet subgroups)}
 \usage{
-plotBrier(object, survObj.new = NULL, method = "mean", times = NULL, ...)
+plotBrier(
+  object,
+  survObj.new = NULL,
+  method = "mean",
+  times = NULL,
+  subgroup = 1
+)
 }
 \arguments{
 \item{object}{fitted object obtained with \code{BayesSurv}}
@@ -17,7 +23,8 @@ for prediction or Bayesian model averaging (\code{"BMA"}) for prediction}
 
 \item{times}{maximum time point to evaluate the prediction}
 
-\item{\dots}{not used}
+\item{subgroup}{index of the subgroup in \code{survObj.new} for prediction. 
+Default value is 1}
 }
 \description{
 Predict time-dependent Brier scores based on Cox regression models
@@ -61,7 +68,7 @@ priorParaPooled = list(
 
 \donttest{
 # run Bayesian Cox with graph-structured priors
-fit = BayesSurv(survObj=dataset, priorPara=priorParaPooled, 
+fit = BayesSurv(Data=dataset, priorPara=priorParaPooled, 
                 initial=initial, nIter=100, seed=123)
 # predict survival probabilities of the train data
 plotBrier(fit, survObj.new = dataset)

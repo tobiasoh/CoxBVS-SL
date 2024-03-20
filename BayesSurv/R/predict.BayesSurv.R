@@ -19,10 +19,12 @@
 #' @param times time points at which to evaluate the risks. If \code{NULL}
 #' (default), the event/censoring times are used. If \code{type="brier"}, the
 #' largest one of the \code{times} is used
-#' @param type option to chose for predicting survival probabilities
-#' (\code{type="probability"}) and brier scores (\code{type="brier"})
+#' @param type option to chose for predicting brier scores with \code{type="brier"} 
+#' or one of \code{type=c("brier", "hazard", "cumhazard", "survival")})
 #' @param method option to use the posterior mean (\code{"mean"}) of coefficients
 #' for prediction or Bayesian model averaging (\code{"BMA"}) for prediction
+#' @param subgroup index of the subgroup in \code{survObj.new} for prediction. 
+#' Default value is 1 
 #' @param \dots not used
 #'
 #' @keywords survival
@@ -62,15 +64,16 @@
 #'
 #' \donttest{
 #' # run Bayesian Cox with graph-structured priors
-#' fit = BayesSurv(survObj=dataset, priorPara=priorParaPooled, 
+#' fit = BayesSurv(Data=dataset, priorPara=priorParaPooled, 
 #'                 initial=initial, nIter=100, seed=123)
 #' # predict survival probabilities of the train data
 #' predict(fit, survObj.new=dataset)
 #' }
 #'
 #' @export
-predict.BayesSurv <- function(object, survObj.new, type = "brier",
-                                method = "mean", times = NULL, ...) {
+predict.BayesSurv <- function(object, survObj.new, type = "brier", 
+                              method = "mean", times = NULL, subgroup = 1, 
+                              ...) {
   if (!inherits(object, "BayesSurv")) {
     stop("Use only with 'BayesSurv' object!")
   }
@@ -82,40 +85,25 @@ predict.BayesSurv <- function(object, survObj.new, type = "brier",
   if (!method %in% c("mean", "BMA")) {
     stop("Argument 'method' has to be 'mean' or 'BMA'!")
   }
-
-  #survObj_train <- as.matrix(read.table(paste0(object$input$outFilePath, "data.txt")))
-  survObj_train <- cbind(cbind(survObj.new$t, survObj.new$di), survObj.new$X)
+  
   # Check the survival input object
-  if (!is.null(survObj.new)) {
-    if (!is.list(survObj.new)) {
-      stop("Argument 'survObj' must be an input")
-    }
-
-    if (length(type) == 1 && type == "brier") {
-      if (any(!names(survObj.new) %in% c("t", "di", "X"))) {
-        stop("List 'survObj' must have three compoents 't', 'di' and 'X'!")
-      }
-    } else {
-      if ("x" %in% names(survObj.new)) {
-        stop("List 'survObj' must have a compoent 'x'!")
-      }
-    }
-
-    if (is.numeric(survObj.new$X) && (is.data.frame(survObj.new$X) || is.matrix(survObj.new$X))) {
-      if (ncol(survObj.new$X) != ncol(object$output$beta.p)) {
-        stop("The 'survObj.new$X' has wrong columns!")
-      }
-      if (is.data.frame(survObj.new$X)) {
-        survObj.new$X <- data.matrix(survObj.new$X)
-      }
-    } else {
-      stop("Data 'survObj.new$X' must be a numeric dataframe or matrix!")
-    }
-  } else {
-    stop("Data 'survObj.new$X' must be provided!")
+  if (is.null(survObj.new)) {
+    stop("Data 'survObj.new' must be provided!")
   }
 
-  betas <- object$output$beta.p[-(1:(object$input$burnin / object$input$thin + 1)), ]
+  #survObj_train <- as.matrix(read.table(paste0(object$input$outFilePath, "data.txt")))
+  if (object$input$S == 1) {
+    beta_m <- object$output$beta.margin#colMeans(betas)
+    betas <- object$output$beta.p[-(1:(object$input$burnin / object$input$thin + 1)), ]
+    survObj <- object$output$survObj
+  } else {
+    beta_m <- object$output$beta.margin[[subgroup]]
+    survObj.new <- survObj.new[[subgroup]]
+    betas <- object$output$beta.p[[subgroup]][-(1:(object$input$burnin / object$input$thin + 1)), ]
+    survObj <- object$output$survObj[[subgroup]]
+    survObj$lp.all <- survObj$lp.all[, -(1:(object$input$burnin / object$input$thin + 1))]
+  }
+
   ibs <- data.frame("Null model" = NA, "Bayesian Cox" = NA)
 
   if (is.null(times)) {
@@ -127,11 +115,10 @@ predict.BayesSurv <- function(object, survObj.new, type = "brier",
 
   if (!"brier" %in% type) {
     if (method == "mean") {
-      beta_m <- colMeans(betas)
-      lp <- as.vector(survObj_train[, -c(1:2)] %*% beta_m)
+      #lp <- as.vector(survObj[, -c(1:2)] %*% beta_m)
       data_train <- data.frame(
-        time = survObj_train[, 1],
-        status = survObj_train[, 2], lp = lp
+        time = survObj$t,
+        status = survObj$di, lp = survObj$lp.mean
       )
       model_train <- coxph(Surv(time, status) ~ lp,
         data = data_train, y = TRUE, x = TRUE
@@ -150,12 +137,12 @@ predict.BayesSurv <- function(object, survObj.new, type = "brier",
       )] <- NULL
     } else {
       # obtain linear predictors corresponding to MCMC estimates
-      lp_all_train <- survObj_train[, -c(1:2)] %*% t(betas)
+      #lp_all_train <- survObj[, -c(1:2)] %*% t(betas)
       lp_all_test <- survObj.new$X %*% t(betas)
       data_train <- data.frame(
-        time = survObj_train[, 1],
-        status = survObj_train[, 2],
-        lp = lp_all_train[, 1]
+        time = survObj$t,
+        status = survObj$di, 
+        lp = survObj$lp.mean[, 1]
       )
       # data_test <- data.frame(time = survObj.new$t,
       #                         status = survObj.new$di,
@@ -173,7 +160,7 @@ predict.BayesSurv <- function(object, survObj.new, type = "brier",
 
       # calculate Brier scores based on other MCMC estimates
       for (i in 2:nrow(betas)) {
-        data_train$lp <- lp_all_train[, i]
+        data_train$lp <- survObj$lp.mean[, i]
         # data_test$lp <- lp_all_test[, i]
         model_train <- coxph(Surv(time, status) ~ lp,
           data = data_train,
@@ -196,9 +183,11 @@ predict.BayesSurv <- function(object, survObj.new, type = "brier",
     fit
   } else {
     if (method == "mean") {
-      beta_m <- colMeans(betas)
-      lp <- as.vector(survObj_train[, -c(1:2)] %*% beta_m)
-      data_train <- data.frame(time = survObj_train[, 1], status = survObj_train[, 2], lp = lp)
+      #beta_m <- colMeans(betas)
+      #lp <- as.vector(survObj_train[, -c(1:2)] %*% beta_m)
+      data_train <- data.frame(time = survObj$t, 
+                               status = survObj$di, 
+                               lp = survObj$lp.mean)
       model_train <- coxph(Surv(time, status) ~ lp, data = data_train, y = TRUE, x = TRUE)
 
       lp_test <- as.vector(survObj.new$X %*% beta_m)
@@ -223,13 +212,13 @@ predict.BayesSurv <- function(object, survObj.new, type = "brier",
       }
     } else {
       # obtain linear predictors corresponding to MCMC estimates
-      lp_all_train <- survObj_train[, -c(1:2)] %*% t(betas)
+      #lp_all_train <- survObj_train[, -c(1:2)] %*% t(betas)
       lp_all_test <- survObj.new$X %*% t(betas)
       Brier <- matrix(0, nrow = length(times) * 2, ncol = 2)
       data_train <- data.frame(
-        time = survObj_train[, 1],
-        status = survObj_train[, 2],
-        lp = lp_all_train[, 1]
+        time = survObj$t,
+        status = survObj$di,
+        lp = survObj$lp.all[, 1]
       )
       data_test <- data.frame(
         time = survObj.new$t,
@@ -250,7 +239,7 @@ predict.BayesSurv <- function(object, survObj.new, type = "brier",
       Brier <- as.matrix(BrierScore0[1:(nrow(BrierScore0) / 2), -c(1:2)])
       # calculate Brier scores based on other MCMC estimates
       for (i in 2:nrow(betas)) {
-        data_train$lp <- lp_all_train[, i]
+        data_train$lp <- survObj$lp.all[, i]#lp_all_train[, i]
         data_test$lp <- lp_all_test[, i]
         model_train <- coxph(Surv(time, status) ~ lp,
           data = data_train,

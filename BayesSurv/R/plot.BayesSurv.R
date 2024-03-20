@@ -14,6 +14,7 @@
 #' \code{c("mean", "median")}. Default is \code{mean}
 #' @param interval logical argument to show 95\% credible intervals. Default
 #' is \code{TRUE}
+#' @param subgroup index of the subgroup for visualizing posterior coefficients
 #' @param ... additional arguments sent to \code{ggplot2::geom_point()}
 #'
 #' @return ggplot object
@@ -55,7 +56,7 @@
 #'
 #' \donttest{
 #' # run Bayesian Cox with graph-structured priors
-#' fit = BayesSurv(survObj=dataset, priorPara=priorParaPooled, 
+#' fit = BayesSurv(Data=dataset, priorPara=priorParaPooled, 
 #'                 initial=initial, nIter=100, seed=123)
 #'
 #' # show posterior mean of coefficients and 95% credible intervals
@@ -65,7 +66,8 @@
 #' }
 #'
 #' @export
-plot.BayesSurv <- function(x, type = "mean", interval = TRUE, ...) {
+plot.BayesSurv <- function(x, type = "mean", interval = TRUE, 
+                           subgroup = 1, ...) {
   if (!(inherits(x, "BayesSurv") || is.matrix(x))) {
     stop("Use only with 'BayesSurv' object or a matrix!")
   }
@@ -80,6 +82,10 @@ plot.BayesSurv <- function(x, type = "mean", interval = TRUE, ...) {
 
   if (!is.logical(interval)) {
     stop("Argument 'interval' must be a logical value!")
+  }
+  
+  if (x$input$S > 1) {
+    x$output$beta.p <- x$output$beta.p[[subgroup]]
   }
 
   if (inherits(x, "BayesSurv")) {

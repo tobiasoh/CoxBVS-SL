@@ -15,7 +15,8 @@
 #' @param times maximum time point to evaluate the prediction
 #' @param method option to use the posterior mean (\code{"mean"}) of coefficients
 #' for prediction or Bayesian model averaging (\code{"BMA"}) for prediction
-#' @param \dots not used
+#' @param subgroup index of the subgroup in \code{survObj.new} for prediction. 
+#' Default value is 1 
 #'
 #' @keywords survival
 #' @examples
@@ -54,7 +55,7 @@
 #'
 #' \donttest{
 #' # run Bayesian Cox with graph-structured priors
-#' fit = BayesSurv(survObj=dataset, priorPara=priorParaPooled, 
+#' fit = BayesSurv(Data=dataset, priorPara=priorParaPooled, 
 #'                 initial=initial, nIter=100, seed=123)
 #' # predict survival probabilities of the train data
 #' plotBrier(fit, survObj.new = dataset)
@@ -62,13 +63,18 @@
 #'
 #' @export
 plotBrier <- function(object, survObj.new = NULL, 
-                      method = "mean", times = NULL, ...) {
+                      method = "mean", times = NULL, subgroup = 1) {
   
-  if (is.null(times)) times <- max(survObj.new$t)
-  Brier_score <- predict.BayesSurv(object, 
-                                      survObj.new = survObj.new, 
-                                      method = method, 
-                                      times = times)
+  if (is.null(times)) 
+    times <- sort(unique(survObj.new$t))
+  capture.output(
+    Brier_score <- predict.BayesSurv(object, 
+                                     survObj.new = survObj.new, 
+                                     method = method, 
+                                     times = times,
+                                     subgroup = subgroup),
+    file = nullfile())
+  
   Brier <- model <- NULL
   #Brier_score %>%
     ggplot2::ggplot(Brier_score, 

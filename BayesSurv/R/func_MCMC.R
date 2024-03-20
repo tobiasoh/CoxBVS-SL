@@ -14,18 +14,26 @@
 #' @param priorPara a list containing prior parameter values
 #' @param initial a list containing prior parameters' initial values
 #' @param nIter the number of iterations of the chain
+#' @param burnin number of iterations to discard at the start of the chain.
+#' Default is 0
 #' @param thin thinning MCMC intermediate results to be stored
 #' @param S the number of subgroups
 #' @param method a method option from 
-#' \code{c("Pooled", "CoxBVSSL", "Sub-struct", "CoxBVSSL", "Sub-struct")}
+#' \code{c("Pooled", "CoxBVSSL", "Sub-struct", "Subgroup")}
 #' @param MRF_2b two different b in MRF prior for subgraphs G_ss and G_rs
+#' @param MRF_G logical value. \code{MRF_G = TRUE} is to fix the MRF graph which 
+#' is provided in the argument \code{priorPara}, and \code{MRF_G = FALSE} is to 
+#' use graphical model for leanring the MRF graph
 #' @param seed random seed
 #'
 #' @return A list object
 #'
 #'
 #' @export
-func_MCMC <- function(survObj, priorPara, initial, nIter, thin, S, method, MRF_2b, seed) {
+func_MCMC <- function(survObj, priorPara, initial, 
+                      nIter, thin, burnin, 
+                      S, method, MRF_2b, MRF_G, 
+                      seed, output_graph_para) {
   # prior parameters for grouped data likelihood of Cox model
   if (method != "Pooled") {
     s <- J <- intv <- vector("list", S)
@@ -92,11 +100,15 @@ func_MCMC <- function(survObj, priorPara, initial, nIter, thin, S, method, MRF_2
 
   if (method == "Pooled") {
     mcmcOutcome$post.gamma <- NULL
+    mcmcOutcome$gamma.margin <- ini$gamma.ini
+    mcmcOutcome$beta.margin <- ini$beta.ini
   } else {
     mcmcOutcome$post.gamma <- vector("list", S)
+    mcmcOutcome$gamma.margin <- rep(list(0), S)
+    mcmcOutcome$beta.margin <- rep(list(0), S)
   }
 
-  if (method %in% c("CoxBVSSL", "Sub-struct")) {
+  if (method %in% c("CoxBVSSL", "Sub-struct") && output_graph_para) {
     mcmcOutcome$G.p <- list(ini$G.ini)
     mcmcOutcome$V.p <- list(ini$V.ini)
     mcmcOutcome$C.p <- list(ini$C.ini)
@@ -134,10 +146,8 @@ func_MCMC <- function(survObj, priorPara, initial, nIter, thin, S, method, MRF_2
   pb <- txtProgressBar(min = 0, max = nIter, style = 3, width = 50, char = "=")
   
   for (M in 1:nIter) {
-    # Sets the progress bar to the current state
-    setTxtProgressBar(pb, M)
     
-    if (method %in% c("CoxBVSSL", "Sub-struct")) {
+    if (method %in% c("CoxBVSSL", "Sub-struct") && !MRF_G) {
       # update graph and precision matrix
       network <- func_MCMC_graph(survObj, priorPara, ini, S, method, MRF_2b)
 
@@ -155,9 +165,8 @@ func_MCMC <- function(survObj, priorPara, initial, nIter, thin, S, method, MRF_2
 
     # update beta (regression parameters)
     # beta.tmp  = UpdateRP.lee11(survObj, priorPara, ini, S, method)
-    # beta.ini  = ini$beta.ini = beta.tmp$beta.ini
     beta.tmp <- UpdateRPlee11(survObj, priorPara, ini, S, method)
-    beta.ini <- ini$beta.ini <- as.vector(beta.tmp$beta.ini)
+    beta.ini  = ini$beta.ini = beta.tmp$beta.ini
 
     # update increments in cumulative hazards
     h <- ini$h <- UpdateBH(survObj, priorPara, ini, S, method)
@@ -167,11 +176,21 @@ func_MCMC <- function(survObj, priorPara, initial, nIter, thin, S, method, MRF_2
     log.j <- profJpost$logjpost
     log.lh <- profJpost$loglike
     
+    if (M > burnin) {
+      if (S == 1) {
+        mcmcOutcome$gamma.margin <- mcmcOutcome$gamma.margin + gamma.ini
+        mcmcOutcome$beta.margin <- mcmcOutcome$beta.margin + beta.ini
+      } else {
+        mcmcOutcome$gamma.margin <- Map("+", mcmcOutcome$gamma.margin, gamma.ini)
+        mcmcOutcome$beta.margin <- Map("+", mcmcOutcome$beta.margin, beta.ini)
+      }
+    }
+    
     # store thinning MCMC intermediate results
     if (M %% thin == 0) {
       if (method == "Pooled") {
-        # RW.accept = rbind(RW.accept, beta.tmp$acceptlee)
-        RW.accept <- rbind(RW.accept, as.vector(beta.tmp$acceptlee))
+        RW.accept = rbind(RW.accept, beta.tmp$acceptlee)
+        # RW.accept <- rbind(RW.accept, as.vector(beta.tmp$acceptlee))
       } else {
         for (g in 1:S) {
           RW.accept[[g]] <- rbind(RW.accept[[g]], beta.tmp$acceptlee[[g]])
@@ -184,10 +203,12 @@ func_MCMC <- function(survObj, priorPara, initial, nIter, thin, S, method, MRF_2
         mcmcOutcome$log.jpost <- c(mcmcOutcome$log.jpost, log.j)
         mcmcOutcome$log.like <- rbind(mcmcOutcome$log.like, log.lh)
         
-        mcmcOutcome$G.p <- c(mcmcOutcome$G.p, list(G.ini))
-        mcmcOutcome$V.p <- c(mcmcOutcome$V.p, list(V.ini))
-        mcmcOutcome$C.p <- c(mcmcOutcome$C.p, list(C.ini))
-        mcmcOutcome$Sig.p <- c(mcmcOutcome$Sig.p, list(Sig.ini))
+        if (output_graph_para) {
+          mcmcOutcome$G.p <- c(mcmcOutcome$G.p, list(G.ini))
+          mcmcOutcome$V.p <- c(mcmcOutcome$V.p, list(V.ini))
+          mcmcOutcome$C.p <- c(mcmcOutcome$C.p, list(C.ini))
+          mcmcOutcome$Sig.p <- c(mcmcOutcome$Sig.p, list(Sig.ini))
+        }
       } else {
         if (method == "Subgroup") {
           mcmcOutcome$log.jpost <- rbind(mcmcOutcome$log.jpost, log.j)
@@ -206,6 +227,7 @@ func_MCMC <- function(survObj, priorPara, initial, nIter, thin, S, method, MRF_2
         mcmcOutcome$h.p <- rbind(mcmcOutcome$h.p, h, deparse.level = 0)
       } else {
         for (g in 1:S) {
+          #browser()
           mcmcOutcome$gamma.p[[g]] <- rbind(mcmcOutcome$gamma.p[[g]], (gamma.ini)[[g]], deparse.level = 0)
           mcmcOutcome$post.gamma[[g]] <- rbind(mcmcOutcome$post.gamma[[g]], sampleGam$post.gamma[[g]], deparse.level = 0)
           mcmcOutcome$beta.p[[g]] <- rbind(mcmcOutcome$beta.p[[g]], (beta.ini)[[g]], deparse.level = 0)
@@ -217,9 +239,20 @@ func_MCMC <- function(survObj, priorPara, initial, nIter, thin, S, method, MRF_2
     # if (M %% 1000 == 0) {
     #   print(M)
     # }
-
+    
+    # Sets the progress bar to the current state
+    setTxtProgressBar(pb, M)
+    
   } # the end of MCMC sampling
   close(pb) # Close the connection of progress bar
+  
+  if (S == 1) {
+    mcmcOutcome$gamma.margin <- mcmcOutcome$gamma.margin / (nIter - burnin)
+    mcmcOutcome$beta.margin <- mcmcOutcome$beta.margin / (nIter - burnin)
+  } else {
+    mcmcOutcome$gamma.margin <- Map("/", mcmcOutcome$gamma.margin, nIter - burnin)
+    mcmcOutcome$beta.margin <- Map("/", mcmcOutcome$beta.margin, nIter - burnin)
+  }
   
   return(mcmcOutcome)
 }

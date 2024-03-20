@@ -11,7 +11,7 @@
 #' @param ini a list containing prior parameters' initial values
 #' @param S the number of subgroups
 #' @param method a method option from 
-#' \code{c("Pooled", "CoxBVSSL", "Sub-struct", "CoxBVSSL", "Sub-struct")}
+#' \code{c("Pooled", "CoxBVSSL", "Sub-struct", "Subgroup")}
 #'
 #' @return An object of ...
 #'
@@ -38,7 +38,7 @@ UpdateRPlee11 <- function(sobj, priorPara, ini, S, method) {
     # erg = UpdateRP.lee11.helper(n, p, x, J, ind.r, ind.d, ind.r_d, be.ini, ga.ini, h, tau, cb)
     erg <- updateRP_genomic_cpp(p, x, J, ind.r, ind.d, ind.r_d, be.ini, ga.ini, h, tau, cb)
 
-    beta.ini <- erg$be.ini
+    beta.ini <- as.vector(erg$be.ini)
     acceptlee <- erg$acceptl
   } else {
     beta.ini <- acceptlee <- vector("list", S)
@@ -57,7 +57,7 @@ UpdateRPlee11 <- function(sobj, priorPara, ini, S, method) {
       # erg = UpdateRP.lee11.helper(n, p, x, J, ind.r, ind.d, ind.r_d, be.ini, ga.ini, h, tau, cb)
       erg <- updateRP_genomic_cpp(p, x, J, ind.r, ind.d, ind.r_d, be.ini, ga.ini, h, tau, cb)
 
-      beta.ini[[g]] <- erg$be.ini
+      beta.ini[[g]] <- as.vector(erg$be.ini)
       acceptlee[[g]] <- erg$acceptl
     }
   }

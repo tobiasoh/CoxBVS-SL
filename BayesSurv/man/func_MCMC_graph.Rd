@@ -17,7 +17,7 @@ func_MCMC_graph(sobj, priorPara, ini, S, method, MRF_2b)
 \item{S}{the number of subgroups}
 
 \item{method}{a method option from 
-\code{c("Pooled", "CoxBVSSL", "Sub-struct", "CoxBVSSL", "Sub-struct")}}
+\code{c("Pooled", "CoxBVSSL", "Sub-struct", "Subgroup")}}
 
 \item{MRF_2b}{two different b in MRF prior for subgraphs G_ss and G_rs}
 }

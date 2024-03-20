@@ -14,7 +14,7 @@
 #' @param ini a list containing prior parameters' ini values
 #' @param S the number of subgroups
 #' @param method a method option from 
-#' \code{c("Pooled", "CoxBVSSL", "Sub-struct", "CoxBVSSL", "Sub-struct")}
+#' \code{c("Pooled", "CoxBVSSL", "Sub-struct", "Subgroup")}
 #' @param MRF_2b two different b in MRF prior for subgraphs G_ss and G_rs
 #'
 #' @return A list object

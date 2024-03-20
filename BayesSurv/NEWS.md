@@ -2,16 +2,20 @@
 
 * continue to help files
 * fix hard-coding parts
-* allow to run original model in Madjar et al. (2021)
 * add more functions for the visualization of results
+
+# BayesSurv 0.0-4
+
+* Bring back the original model in Madjar et al. (2021)
+* Extend Madjar et al. (2021) with fixed MRF graph for multiple subgroups
 
 # BayesSurv 0.0-3
 
-* Added thinning parameter
+* Add thinning parameter
 
 # BayesSurv 0.0-2
 
-* Improved help files
+* Improve help files
 
 # BayesSurv 0.0-1
 

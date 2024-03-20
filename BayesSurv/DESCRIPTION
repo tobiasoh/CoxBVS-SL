@@ -1,7 +1,7 @@
 Package: BayesSurv
 Title: Bayesian Cox models with graph-structured priors
-Version: 0.0-3
-Date: 2024-03-19
+Version: 0.0-4
+Date: 2024-03-20
 Authors@R: c(person("Zhi", "Zhao", role=c("aut","cre"), email = "zhi.zhao@medisin.uio.no"),
              person("Tobias", "Østmo Hermansen", role=c("aut")),
              person("Katrin", "Madjar", role=c("aut")),
@@ -17,7 +17,7 @@ Imports: Rcpp, xml2, ggplot2, GGally, MASS, mvtnorm, survival,
 Suggests: knitr
 LazyData: true
 NeedsCompilation: yes
-Packaged: 2024-03-19 16:48:52 UTC; zhiz
+Packaged: 2024-03-20 11:40:24 UTC; zhiz
 Author: Zhi Zhao [aut, cre],
   Tobias Østmo Hermansen [aut],
   Katrin Madjar [aut],

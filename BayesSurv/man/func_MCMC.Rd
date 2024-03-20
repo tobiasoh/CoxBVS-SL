@@ -4,7 +4,20 @@
 \alias{func_MCMC}
 \title{Function to run MCMC sampling}
 \usage{
-func_MCMC(survObj, priorPara, initial, nIter, thin, S, method, MRF_2b, seed)
+func_MCMC(
+  survObj,
+  priorPara,
+  initial,
+  nIter,
+  thin,
+  burnin,
+  S,
+  method,
+  MRF_2b,
+  MRF_G,
+  seed,
+  output_graph_para
+)
 }
 \arguments{
 \item{survObj}{a list containing observed data from \code{n} subjects;
@@ -18,12 +31,19 @@ func_MCMC(survObj, priorPara, initial, nIter, thin, S, method, MRF_2b, seed)
 
 \item{thin}{thinning MCMC intermediate results to be stored}
 
+\item{burnin}{number of iterations to discard at the start of the chain.
+Default is 0}
+
 \item{S}{the number of subgroups}
 
 \item{method}{a method option from 
-\code{c("Pooled", "CoxBVSSL", "Sub-struct", "CoxBVSSL", "Sub-struct")}}
+\code{c("Pooled", "CoxBVSSL", "Sub-struct", "Subgroup")}}
 
 \item{MRF_2b}{two different b in MRF prior for subgraphs G_ss and G_rs}
+
+\item{MRF_G}{logical value. \code{MRF_G = TRUE} is to fix the MRF graph which 
+is provided in the argument \code{priorPara}, and \code{MRF_G = FALSE} is to 
+use graphical model for leanring the MRF graph}
 
 \item{seed}{random seed}
 }

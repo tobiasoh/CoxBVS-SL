@@ -121,9 +121,9 @@ sim.data.fun = function(n, p, surv.e, surv.c, beta1.p, beta2.p, cov_matrix){
   surv2 = sim.surv(X2, beta2, surv.e[[2]], surv.c[[2]], n) 
   
   # Combine training and test data of both subgroups
-  data1 = list("X" = X1, "time" = surv1[[2]], "status.train" = surv1[[1]])
-  data2 = list("X" = X2, "time" = surv2[[2]], "status.train" = surv2[[1]])
-  Data = list(data1, data2)
+  data1 = list("X" = X1, "time" = surv1[[2]], "status" = surv1[[1]])
+  data2 = list("X" = X2, "time" = surv2[[2]], "status" = surv2[[1]])
+  Data = list("subgroup1" = data1, "subgroup2" = data2)
   
   # Scale covariates using parameters of training data
   sd.X = lapply(Data, function(xx) apply(xx$X,2,sd))  
@@ -134,7 +134,8 @@ sim.data.fun = function(n, p, surv.e, surv.c, beta1.p, beta2.p, cov_matrix){
   # Unscaled covariates (for Pooled model):
   Data[[1]]$X.unsc = X1
   Data[[2]]$X.unsc = X2
-  names(Data) <- c("subgroup1", "subgroup2")
+  Data[[1]]$trueB = beta1
+  Data[[2]]$trueB = beta2
  
   return(Data)
 }
