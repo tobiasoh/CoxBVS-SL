@@ -49,6 +49,59 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// updateBH_cpp
+arma::vec updateBH_cpp(const arma::mat x_, const arma::vec beta_, const unsigned int J_, const arma::mat ind_r_d_, const arma::vec hPriorSh_, const arma::vec d_, const double c0_);
+RcppExport SEXP _BayesSurv_updateBH_cpp(SEXP x_SEXP, SEXP beta_SEXP, SEXP J_SEXP, SEXP ind_r_d_SEXP, SEXP hPriorSh_SEXP, SEXP d_SEXP, SEXP c0_SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat >::type x_(x_SEXP);
+    Rcpp::traits::input_parameter< const arma::vec >::type beta_(beta_SEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type J_(J_SEXP);
+    Rcpp::traits::input_parameter< const arma::mat >::type ind_r_d_(ind_r_d_SEXP);
+    Rcpp::traits::input_parameter< const arma::vec >::type hPriorSh_(hPriorSh_SEXP);
+    Rcpp::traits::input_parameter< const arma::vec >::type d_(d_SEXP);
+    Rcpp::traits::input_parameter< const double >::type c0_(c0_SEXP);
+    rcpp_result_gen = Rcpp::wrap(updateBH_cpp(x_, beta_, J_, ind_r_d_, hPriorSh_, d_, c0_));
+    return rcpp_result_gen;
+END_RCPP
+}
+// updateBH_list_cpp
+Rcpp::List updateBH_list_cpp(const Rcpp::List x_, const Rcpp::List beta_, const Rcpp::List J_, const Rcpp::List ind_r_d_, const Rcpp::List hPriorSh_, const Rcpp::List d_, const double c0_);
+RcppExport SEXP _BayesSurv_updateBH_list_cpp(SEXP x_SEXP, SEXP beta_SEXP, SEXP J_SEXP, SEXP ind_r_d_SEXP, SEXP hPriorSh_SEXP, SEXP d_SEXP, SEXP c0_SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List >::type x_(x_SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List >::type beta_(beta_SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List >::type J_(J_SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List >::type ind_r_d_(ind_r_d_SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List >::type hPriorSh_(hPriorSh_SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List >::type d_(d_SEXP);
+    Rcpp::traits::input_parameter< const double >::type c0_(c0_SEXP);
+    rcpp_result_gen = Rcpp::wrap(updateBH_list_cpp(x_, beta_, J_, ind_r_d_, hPriorSh_, d_, c0_));
+    return rcpp_result_gen;
+END_RCPP
+}
+// calJpost_helper_cpp
+Rcpp::List calJpost_helper_cpp(const arma::vec cbtau, const arma::mat x_, const arma::vec beta_, const arma::vec h_, const arma::vec hPriorSh_, const double c0_, const unsigned int J_, const arma::mat ind_r_d_, const arma::mat ind_d_);
+RcppExport SEXP _BayesSurv_calJpost_helper_cpp(SEXP cbtauSEXP, SEXP x_SEXP, SEXP beta_SEXP, SEXP h_SEXP, SEXP hPriorSh_SEXP, SEXP c0_SEXP, SEXP J_SEXP, SEXP ind_r_d_SEXP, SEXP ind_d_SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::vec >::type cbtau(cbtauSEXP);
+    Rcpp::traits::input_parameter< const arma::mat >::type x_(x_SEXP);
+    Rcpp::traits::input_parameter< const arma::vec >::type beta_(beta_SEXP);
+    Rcpp::traits::input_parameter< const arma::vec >::type h_(h_SEXP);
+    Rcpp::traits::input_parameter< const arma::vec >::type hPriorSh_(hPriorSh_SEXP);
+    Rcpp::traits::input_parameter< const double >::type c0_(c0_SEXP);
+    Rcpp::traits::input_parameter< const unsigned int >::type J_(J_SEXP);
+    Rcpp::traits::input_parameter< const arma::mat >::type ind_r_d_(ind_r_d_SEXP);
+    Rcpp::traits::input_parameter< const arma::mat >::type ind_d_(ind_d_SEXP);
+    rcpp_result_gen = Rcpp::wrap(calJpost_helper_cpp(cbtau, x_, beta_, h_, hPriorSh_, c0_, J_, ind_r_d_, ind_d_));
+    return rcpp_result_gen;
+END_RCPP
+}
 // updateRP_genomic_cpp
 Rcpp::List updateRP_genomic_cpp(const unsigned int p, const arma::mat x_, const unsigned int J_, arma::mat ind_r_, arma::mat ind_d_, arma::mat ind_r_d_, arma::vec be_, arma::vec ga_, arma::vec h_, const double tau, const double cb);
 RcppExport SEXP _BayesSurv_updateRP_genomic_cpp(SEXP pSEXP, SEXP x_SEXP, SEXP J_SEXP, SEXP ind_r_SEXP, SEXP ind_d_SEXP, SEXP ind_r_d_SEXP, SEXP be_SEXP, SEXP ga_SEXP, SEXP h_SEXP, SEXP tauSEXP, SEXP cbSEXP) {

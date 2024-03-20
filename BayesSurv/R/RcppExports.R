@@ -13,6 +13,18 @@ sumMatProdVec <- function(x, y) {
     .Call('_BayesSurv_sumMatProdVec', PACKAGE = 'BayesSurv', x, y)
 }
 
+updateBH_cpp <- function(x_, beta_, J_, ind_r_d_, hPriorSh_, d_, c0_) {
+    .Call('_BayesSurv_updateBH_cpp', PACKAGE = 'BayesSurv', x_, beta_, J_, ind_r_d_, hPriorSh_, d_, c0_)
+}
+
+updateBH_list_cpp <- function(x_, beta_, J_, ind_r_d_, hPriorSh_, d_, c0_) {
+    .Call('_BayesSurv_updateBH_list_cpp', PACKAGE = 'BayesSurv', x_, beta_, J_, ind_r_d_, hPriorSh_, d_, c0_)
+}
+
+calJpost_helper_cpp <- function(cbtau, x_, beta_, h_, hPriorSh_, c0_, J_, ind_r_d_, ind_d_) {
+    .Call('_BayesSurv_calJpost_helper_cpp', PACKAGE = 'BayesSurv', cbtau, x_, beta_, h_, hPriorSh_, c0_, J_, ind_r_d_, ind_d_)
+}
+
 updateRP_genomic_cpp <- function(p, x_, J_, ind_r_, ind_d_, ind_r_d_, be_, ga_, h_, tau, cb) {
     .Call('_BayesSurv_updateRP_genomic_cpp', PACKAGE = 'BayesSurv', p, x_, J_, ind_r_, ind_d_, ind_r_d_, be_, ga_, h_, tau, cb)
 }

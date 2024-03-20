@@ -26,6 +26,116 @@ arma::vec sumMatProdVec(const arma::mat x, const arma::vec y)
 }
 
 // [[Rcpp::export]]
+arma::vec updateBH_cpp(const arma::mat x_,
+                       const arma::vec beta_,
+                       const unsigned int J_,
+                       const arma::mat ind_r_d_,
+                       const arma::vec hPriorSh_,
+                       const arma::vec d_,
+                       const double c0_)
+{
+    // update cumulative baseline harzard
+    // update the increment h_j in the cumulative baseline hazard in each interval
+    
+    arma::vec xbeta_ = x_ * beta_;
+    xbeta_.elem(arma::find(xbeta_ > 700)).fill(700.);
+    arma::vec h_rate = c0_ + sumMatProdVec(ind_r_d_, arma::exp( xbeta_ ));
+
+    // arma::vec shape = hPriorSh_ + d_;
+    arma::vec h_ = arma::zeros<arma::vec>(J_);
+    for (unsigned int j = 0; j < J_; ++j)
+        // double h_rate = c0_ + arma::dot( ind_r_d_.col(j), arma::exp( xbeta_ ) );
+        h_(j) = arma::randg(arma::distr_param(hPriorSh_(j) + d_(j), 1. / h_rate(j)));
+    // h_(j) = R::rgamma( shape(j), 1. / h_rate(j) );
+
+    return h_;
+}
+
+// [[Rcpp::export]]
+Rcpp::List updateBH_list_cpp(const Rcpp::List x_,
+                             const Rcpp::List beta_,
+                             const Rcpp::List J_,
+                             const Rcpp::List ind_r_d_,
+                             const Rcpp::List hPriorSh_,
+                             const Rcpp::List d_,
+                             const double c0_)
+{
+    // update cumulative baseline harzard
+    // update the increment h_j in the cumulative baseline hazard in each interval
+    
+    int S = J_.size();
+    Rcpp::List h_(S);
+    
+    for (unsigned int g = 0; g < S; ++g)
+    {
+        arma::mat x_tmp = x_[g];
+        arma::vec beta_tmp = beta_[g];
+        int J_tmp = J_[g];
+        arma::mat ind_r_d_tmp = ind_r_d_[g];
+        arma::vec hPriorSh_tmp = hPriorSh_[g];
+        arma::vec d_tmp = d_[g];
+        
+        arma::vec xbeta_ = x_tmp * beta_tmp;
+        xbeta_.elem(arma::find(xbeta_ > 700)).fill(700.);
+        arma::vec h_rate = c0_ + sumMatProdVec(ind_r_d_tmp, arma::exp( xbeta_ ));
+
+        arma::vec h_tmp = arma::zeros<arma::vec>(J_tmp);
+        for (unsigned int j = 0; j < J_tmp; ++j)
+            h_tmp(j) = arma::randg(arma::distr_param(hPriorSh_tmp(j) + d_tmp(j), 1. / h_rate(j)));
+        
+        h_[g] = h_tmp;
+    }
+    
+    return h_;
+}
+
+// [[Rcpp::export]]
+Rcpp::List  calJpost_helper_cpp(const arma::vec cbtau,
+                                const arma::mat x_,
+                                const arma::vec beta_,
+                                const arma::vec h_,
+                                const arma::vec hPriorSh_,
+                                const double c0_,
+                                const unsigned int J_,
+                                const arma::mat ind_r_d_,
+                                const arma::mat ind_d_)
+{
+    // subfunction to update joint posterior distribution
+    
+    arma::vec xbeta_ = x_ * beta_;
+    xbeta_.elem(arma::find(xbeta_ > 700)).fill(700.);
+    arma::vec exp_xbeta = arma::exp(xbeta_);
+    
+    double first_sum_ini = arma::accu(-h_ % sumMatProdVec(ind_r_d_, exp_xbeta));
+    
+    arma::mat h_exp_xbeta_mat = -arma::kron(exp_xbeta, h_.t());
+    h_exp_xbeta_mat.elem(arma::find(h_exp_xbeta_mat > -1.0e-7)).fill(-1.0e-7);
+    h_exp_xbeta_mat = arma::log(1.0 - arma::exp(h_exp_xbeta_mat));
+    // double second_sum_ini = arma::accu(arma::sum((h_exp_xbeta_mat % ind_d_).t(), 1));
+    double second_sum_ini = arma::accu(h_exp_xbeta_mat % ind_d_);
+    double loglike1 = first_sum_ini + second_sum_ini;
+    
+    double logpriorBeta1 = 0.;
+    for (unsigned int j = 0; j < beta_.size(); ++j)
+    {
+        logpriorBeta1 += arma::log_normpdf( beta_(j), 0.0, cbtau(j) );
+    }
+    
+    double logpriorH1 = 0.;
+    for (unsigned int j = 0; j < h_.size(); ++j)
+    {
+        logpriorH1 += R::dgamma( h_(j), hPriorSh_(j), 1. / c0_, true );
+    }
+    
+    return Rcpp::List::create(
+                              Rcpp::Named("loglike1") = loglike1,
+                              Rcpp::Named("logpriorBeta1") = logpriorBeta1,
+                              Rcpp::Named("logpriorH1") = logpriorH1
+                              );
+}
+
+
+// [[Rcpp::export]]
 Rcpp::List updateRP_genomic_cpp(const unsigned int p,
                                 const arma::mat x_,
                                 const unsigned int J_,

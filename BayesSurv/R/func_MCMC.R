@@ -169,7 +169,17 @@ func_MCMC <- function(survObj, priorPara, initial,
     beta.ini  = ini$beta.ini = beta.tmp$beta.ini
 
     # update increments in cumulative hazards
-    h <- ini$h <- UpdateBH(survObj, priorPara, ini, S, method)
+    #h <- ini$h <- UpdateBH(survObj, priorPara, ini, S, method)
+    if (S == 1) {
+      h <- ini$h <- as.vector(updateBH_cpp(survObj$X, ini$beta.ini, 
+                                 priorPara$J, priorPara$ind.r_d, 
+                                 priorPara$hPriorSh, priorPara$d, priorPara$c0))
+    } else {
+      h <- updateBH_list_cpp(survObj$X, ini$beta.ini, 
+                             priorPara$J, priorPara$ind.r_d, 
+                             priorPara$hPriorSh, priorPara$d, priorPara$c0)
+      h <- ini$h <- lapply(h, function(x) as.vector(x))
+    }
 
     # profile joint posterior probability
     profJpost <- calJpost(survObj, priorPara, ini, S, method, MRF_2b)

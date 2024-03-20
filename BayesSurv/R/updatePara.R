@@ -227,6 +227,129 @@ UpdateRP.lee11.helper <- function(n, p, x, J, ind.r, ind.d, ind.r_d, be.ini,
   }
   return(list("be.ini" = be.ini, "acceptl" = acceptl))
 }
+# the end of "UpdateRP.lee11.helper" function
+
+####
+
+# Update joint posterior distribution
+
+calJpost <- function(sobj, priorPara, ini, S, method, MRF_2b) {
+  # hyperparameters
+  p <- sobj$p
+  c0 <- priorPara$c0
+  pi.ga <- priorPara$pi.ga
+  tau <- priorPara$tau
+  cb <- priorPara$cb
+  
+  if (method %in% c("CoxBVSSL", "Sub-struct")) {
+    lambda <- priorPara$lambda
+    a <- priorPara$a
+    b <- priorPara$b
+    pi.G <- priorPara$pi.G
+    G.ini <- ini$G.ini
+  }
+  
+  if (method == "Pooled") {
+    n <- sobj$n
+    X <- sobj$X
+    J <- priorPara$J
+    ind.r_d <- priorPara$ind.r_d
+    ind.d <- priorPara$ind.d
+    hPriorSh <- priorPara$hPriorSh
+    
+    gamma.ini <- ini$gamma.ini
+    beta.ini <- ini$beta.ini
+    h <- ini$h
+    cbtau <- tau * ifelse(gamma.ini == 1, cb, 1)
+    
+    # erg <- calJpost.helper(cbtau, X, beta.ini, h, hPriorSh, c0, n, p, J, ind.r_d, ind.d)
+    erg <- calJpost_helper_cpp(cbtau, X, beta.ini, h, hPriorSh, c0, J, ind.r_d, ind.d)
+    loglike <- erg$loglike1
+    logpriorBeta <- erg$logpriorBeta1
+    logpriorH <- erg$logpriorH1
+    
+    logpriorGamma <- sum(gamma.ini * log(pi.ga)) + sum((1 - gamma.ini) * log(1 - pi.ga))
+    logjpost <- loglike + logpriorGamma + logpriorBeta + logpriorH
+  } else {
+    loglike <- logpriorBeta <- logpriorH <- logpriorGamma <- logjpost <- logpriorOmega <- logpriorX <- numeric()
+    
+    for (g in 1:S) {
+      n <- sobj$n[[g]]
+      X <- sobj$X[[g]]
+      J <- priorPara$J[[g]]
+      ind.r_d <- priorPara$ind.r_d[[g]]
+      ind.d <- priorPara$ind.d[[g]]
+      hPriorSh <- priorPara$hPriorSh[[g]]
+      
+      gamma.ini <- ini$gamma.ini[[g]]
+      beta.ini <- ini$beta.ini[[g]]
+      h <- ini$h[[g]]
+      cbtau <- tau * ifelse(gamma.ini == 1, cb, 1)
+      
+      # erg <- calJpost.helper(cbtau, X, beta.ini, h, hPriorSh, c0, n, p, J, ind.r_d, ind.d)
+      erg <- calJpost_helper_cpp(cbtau, X, beta.ini, h, hPriorSh, c0, J, ind.r_d, ind.d)
+      loglike[g] <- erg$loglike1
+      logpriorBeta[g] <- erg$logpriorBeta1
+      logpriorH[g] <- erg$logpriorH1
+      
+      if (method == "Subgroup") {
+        logpriorGamma[g] <- sum(gamma.ini * log(pi.ga)) + sum((1 - gamma.ini) * log(1 - pi.ga))
+        logjpost[g] <- loglike[g] + logpriorGamma[g] + logpriorBeta[g] + logpriorH[g]
+      } else { # CoxBVSSL/ Sub-struct model
+        
+        C.ini <- ini$C.ini[[g]]
+        V.ini <- ini$V.ini[[g]]
+        Sig.ini <- ini$Sig.ini[[g]]
+        
+        omega.mat <- matrix(0, p, p)
+        for (i in 1:p) {
+          omega.mat[i, ] <- dnorm(C.ini[i, ], mean = rep(0, p), sd = sqrt(V.ini[i, ]), log = TRUE)
+        }
+        diag(omega.mat) <- dexp(diag(C.ini), rate = lambda / 2, log = TRUE)
+        
+        logpriorOmega[g] <- sum(omega.mat[upper.tri(omega.mat, diag = TRUE)])
+        logpriorX[g] <- sum(dmvnorm(X, mean = rep(0, p), sigma = Sig.ini, log = TRUE))
+      }
+    }
+  }
+  if (method %in% c("CoxBVSSL", "Sub-struct")) {
+    pii.mat <- matrix(0, p * S, p * S)
+    
+    # id.mat is "full" graph (with all possible edges set to 1)
+    if (method == "CoxBVSSL") {
+      id.mat <- do.call("cbind", rep(list(do.call("rbind", rep(list(diag(1, p, p)), S))), S))
+    } else {
+      id.mat <- matrix(0, p * S, p * S)
+    }
+    for (g in 1:S) {
+      id.mat[(g - 1) * p + (1:p), (g - 1) * p + (1:p)] <- matrix(1, p, p)
+    }
+    
+    pii.mat[id.mat == 1 & G.ini == 0] <- log(1 - pi.G)
+    pii.mat[id.mat == 1 & G.ini == 1] <- log(pi.G)
+    
+    logpriorGraph <- sum(pii.mat[upper.tri(pii.mat, diag = FALSE)])
+    
+    gamma.vec <- unlist(ini$gamma.ini)
+    
+    if (MRF_2b) {
+      for (g in 1:S) { # b1 * G_ss
+        G.ini[(g - 1) * p + (1:p), (g - 1) * p + (1:p)] <- b[1] * G.ini[(g - 1) * p + (1:p), (g - 1) * p + (1:p)]
+      }
+      for (g in 1:(S - 1)) { # b2 * G_rs
+        for (r in g:(S - 1)) {
+          G.ini[(g - 1) * p + (1:p), r * p + (1:p)] <- G.ini[r * p + (1:p), (g - 1) * p + (1:p)] <- b[2] * G.ini[r * p + (1:p), (g - 1) * p + (1:p)]
+        }
+      }
+      b <- 1
+    }
+    logpriorGamma <- (a * sum(gamma.vec) + b * t(gamma.vec) %*% G.ini %*% gamma.vec)
+    
+    logjpost <- sum(loglike) + sum(logpriorBeta) + sum(logpriorH) + logpriorGamma + sum(logpriorOmega) + sum(logpriorX) + logpriorGraph
+  }
+  return(list(loglike = loglike, logjpost = logjpost))
+}
+
 
 # # Update regression coefficients according to Lee et al. (2011)
 #
@@ -280,144 +403,27 @@ UpdateRP.lee11.helper <- function(n, p, x, J, ind.r, ind.d, ind.r_d, be.ini,
 
 ####
 
-# Helper function for "calJpost" function.
-
-calJpost.helper <- function(cbtau, X, beta.ini, h, hPriorSh, c0, n, p, J, ind.r_d, ind.d) {
-  xbeta <- apply(X * matrix(rep(beta.ini, n), n, p, byrow = T), 1, sum)
-  xbeta.mat <- matrix(rep(xbeta, J), n, J)
-  xbeta.dum <- xbeta
-  xbeta.dum[xbeta.dum > 700] <- 700
-  exp.xbeta <- exp(xbeta.dum)
-  exp.xbeta.mat <- matrix(rep(exp.xbeta, J), n, J)
-  h.mat <- matrix(rep(h, n), n, J, byrow = T)
-  h.exp.xbeta.mat <- -h.mat * exp.xbeta.mat
-  h.exp.xbeta.mat[h.exp.xbeta.mat > -10^(-7)] <- -10^(-7)
-
-  first.sum.ini <- sum(-h * apply(exp.xbeta.mat * ind.r_d, 2, sum))
-  second.sum.ini <- sum(apply(log(1 - exp(h.exp.xbeta.mat)) * ind.d, 2, sum))
-  loglike1 <- first.sum.ini + second.sum.ini
-  logpriorBeta1 <- sum(dnorm(beta.ini, mean = rep(0, p), sd = cbtau, log = TRUE))
-  logpriorH1 <- sum(dgamma(h, shape = hPriorSh, rate = c0, log = TRUE))
-
-  return(list("loglike1" = loglike1, "logpriorBeta1" = logpriorBeta1, "logpriorH1" = logpriorH1))
-}
-
-# Update joint posterior distribution
-
-calJpost <- function(sobj, priorPara, ini, S, method, MRF_2b) {
-  # hyperparameters
-  p <- sobj$p
-  c0 <- priorPara$c0
-  pi.ga <- priorPara$pi.ga
-  tau <- priorPara$tau
-  cb <- priorPara$cb
-
-  if (method %in% c("CoxBVSSL", "Sub-struct")) {
-    lambda <- priorPara$lambda
-    a <- priorPara$a
-    b <- priorPara$b
-    pi.G <- priorPara$pi.G
-    G.ini <- ini$G.ini
-  }
-
-  if (method == "Pooled") {
-    n <- sobj$n
-    X <- sobj$X
-    J <- priorPara$J
-    ind.r_d <- priorPara$ind.r_d
-    ind.d <- priorPara$ind.d
-    hPriorSh <- priorPara$hPriorSh
-
-    gamma.ini <- ini$gamma.ini
-    beta.ini <- ini$beta.ini
-    h <- ini$h
-    cbtau <- tau * ifelse(gamma.ini == 1, cb, 1)
-
-    erg <- calJpost.helper(cbtau, X, beta.ini, h, hPriorSh, c0, n, p, J, ind.r_d, ind.d)
-    loglike <- erg$loglike1
-    logpriorBeta <- erg$logpriorBeta1
-    logpriorH <- erg$logpriorH1
-
-    logpriorGamma <- sum(gamma.ini * log(pi.ga)) + sum((1 - gamma.ini) * log(1 - pi.ga))
-    logjpost <- loglike + logpriorGamma + logpriorBeta + logpriorH
-  } else {
-    loglike <- logpriorBeta <- logpriorH <- logpriorGamma <- logjpost <- logpriorOmega <- logpriorX <- numeric()
-
-    for (g in 1:S) {
-      n <- sobj$n[[g]]
-      X <- sobj$X[[g]]
-      J <- priorPara$J[[g]]
-      ind.r_d <- priorPara$ind.r_d[[g]]
-      ind.d <- priorPara$ind.d[[g]]
-      hPriorSh <- priorPara$hPriorSh[[g]]
-
-      gamma.ini <- ini$gamma.ini[[g]]
-      beta.ini <- ini$beta.ini[[g]]
-      h <- ini$h[[g]]
-      cbtau <- tau * ifelse(gamma.ini == 1, cb, 1)
-
-      erg <- calJpost.helper(cbtau, X, beta.ini, h, hPriorSh, c0, n, p, J, ind.r_d, ind.d)
-      loglike[g] <- erg$loglike1
-      logpriorBeta[g] <- erg$logpriorBeta1
-      logpriorH[g] <- erg$logpriorH1
-
-      if (method == "Subgroup") {
-        logpriorGamma[g] <- sum(gamma.ini * log(pi.ga)) + sum((1 - gamma.ini) * log(1 - pi.ga))
-        logjpost[g] <- loglike[g] + logpriorGamma[g] + logpriorBeta[g] + logpriorH[g]
-      } else { # CoxBVSSL/ Sub-struct model
-
-        C.ini <- ini$C.ini[[g]]
-        V.ini <- ini$V.ini[[g]]
-        Sig.ini <- ini$Sig.ini[[g]]
-
-        omega.mat <- matrix(0, p, p)
-        for (i in 1:p) {
-          omega.mat[i, ] <- dnorm(C.ini[i, ], mean = rep(0, p), sd = sqrt(V.ini[i, ]), log = TRUE)
-        }
-        diag(omega.mat) <- dexp(diag(C.ini), rate = lambda / 2, log = TRUE)
-
-        logpriorOmega[g] <- sum(omega.mat[upper.tri(omega.mat, diag = TRUE)])
-        logpriorX[g] <- sum(dmvnorm(X, mean = rep(0, p), sigma = Sig.ini, log = TRUE))
-      }
-    }
-  }
-  if (method %in% c("CoxBVSSL", "Sub-struct")) {
-    pii.mat <- matrix(0, p * S, p * S)
-
-    # id.mat is "full" graph (with all possible edges set to 1)
-    if (method == "CoxBVSSL") {
-      id.mat <- do.call("cbind", rep(list(do.call("rbind", rep(list(diag(1, p, p)), S))), S))
-    } else {
-      id.mat <- matrix(0, p * S, p * S)
-    }
-    for (g in 1:S) {
-      id.mat[(g - 1) * p + (1:p), (g - 1) * p + (1:p)] <- matrix(1, p, p)
-    }
-
-    pii.mat[id.mat == 1 & G.ini == 0] <- log(1 - pi.G)
-    pii.mat[id.mat == 1 & G.ini == 1] <- log(pi.G)
-
-    logpriorGraph <- sum(pii.mat[upper.tri(pii.mat, diag = FALSE)])
-
-    gamma.vec <- unlist(ini$gamma.ini)
-
-    if (MRF_2b) {
-      for (g in 1:S) { # b1 * G_ss
-        G.ini[(g - 1) * p + (1:p), (g - 1) * p + (1:p)] <- b[1] * G.ini[(g - 1) * p + (1:p), (g - 1) * p + (1:p)]
-      }
-      for (g in 1:(S - 1)) { # b2 * G_rs
-        for (r in g:(S - 1)) {
-          G.ini[(g - 1) * p + (1:p), r * p + (1:p)] <- G.ini[r * p + (1:p), (g - 1) * p + (1:p)] <- b[2] * G.ini[r * p + (1:p), (g - 1) * p + (1:p)]
-        }
-      }
-      b <- 1
-    }
-    logpriorGamma <- (a * sum(gamma.vec) + b * t(gamma.vec) %*% G.ini %*% gamma.vec)
-
-    logjpost <- sum(loglike) + sum(logpriorBeta) + sum(logpriorH) + logpriorGamma + sum(logpriorOmega) + sum(logpriorX) + logpriorGraph
-  }
-  return(list(loglike = loglike, logjpost = logjpost))
-}
+# # Helper function for "calJpost" function.
+# 
+# calJpost.helper <- function(cbtau, X, beta.ini, h, hPriorSh, c0, n, p, J, ind.r_d, ind.d) {
+#   xbeta <- apply(X * matrix(rep(beta.ini, n), n, p, byrow = T), 1, sum)
+#   xbeta.mat <- matrix(rep(xbeta, J), n, J)
+#   xbeta.dum <- xbeta
+#   xbeta.dum[xbeta.dum > 700] <- 700
+#   exp.xbeta <- exp(xbeta.dum)
+#   exp.xbeta.mat <- matrix(rep(exp.xbeta, J), n, J)
+#   h.mat <- matrix(rep(h, n), n, J, byrow = T)
+#   h.exp.xbeta.mat <- -h.mat * exp.xbeta.mat
+#   h.exp.xbeta.mat[h.exp.xbeta.mat > -10^(-7)] <- -10^(-7)
+# 
+#   first.sum.ini <- sum(-h * apply(exp.xbeta.mat * ind.r_d, 2, sum))
+#   second.sum.ini <- sum(apply(log(1 - exp(h.exp.xbeta.mat)) * ind.d, 2, sum))
+#   loglike1 <- first.sum.ini + second.sum.ini
+#   logpriorBeta1 <- sum(dnorm(beta.ini, mean = rep(0, p), sd = cbtau, log = TRUE))
+#   logpriorH1 <- sum(dgamma(h, shape = hPriorSh, rate = c0, log = TRUE))
+# 
+#   return(list("loglike1" = loglike1, "logpriorBeta1" = logpriorBeta1, "logpriorH1" = logpriorH1))
+# }
 
 
 # setting.interval = function(y, delta, s, J)
