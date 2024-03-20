@@ -28,9 +28,7 @@ data("simData", package = "BayesSurv")
 dataset = list("X" = simData[[1]]$X, 
                "t" = simData[[1]]$time,
                "di" = simData[[1]]$status)
-
 ```
-
 
 ### Run a Bayesian Cox model
 
@@ -59,8 +57,7 @@ priorParaPooled = list(
 
 ## run Bayesian Cox with graph-structured priors
 library("BayesSurv")
-fit = BayesSurv(survObj=dataset, priorPara=priorParaPooled, 
-                initial=initial, nIter=100)
+fit = BayesSurv(Data = dataset, priorPara = priorParaPooled, initial = initial, nIter = 100)
 
 ## show posterior mean of coefficients and 95% credible intervals
 library(ggplot2)
@@ -69,9 +66,9 @@ plot(fit) +
   theme(axis.text.x = element_text(angle = 90, size = 7))
 
 #plot(fit$output$beta.p[,1], type="l")
-#colMeans(fit$output$beta.p[-c(1:(nrow(fit$output$beta.p)/2)), ])
-#colMeans(fit$output$gamma.p[-c(1:(nrow(fit$output$gamma.p)/2)), ])
-#trueBeta
+#fit$output$beta.margin
+#fit$output$gamma.margin
+#simData[[1]]$trueB
 ```
 
 <img src="man/figures/README_plot_beta.png" width="100%" />
@@ -126,13 +123,14 @@ predict(fit, survObj.new = dataset, type = c("cumhazard", "survival"))
 priorParaPooled$G <- Matrix::bdiag(simData$G, simData$G)
 dataset2 <- simData[1:2]
 dataset2 <- lapply(dataset2, setNames, c("X", "t", "di", "X.unsc", "trueB"))
-fit = BayesSurv(Data=dataset2, priorPara=priorParaPooled, 
-                model.type="CoxBVSSL", MRF.G=TRUE,
-                initial=initial, nIter=10, burnin=5)
+fit <- BayesSurv(Data = dataset2, 
+                 priorPara = priorParaPooled, initial = initial, 
+                 model.type="CoxBVSSL", MRF.G = TRUE, 
+                 nIter = 10, burnin = 5)
 ```
 
 ## References
 
 > Katrin Madjar, Manuela Zucknick, Katja Ickstadt, Jörg Rahnenführer (2021).
 > Combining heterogeneous subgroups with graph‐structured variable selection priors for Cox regression.
-> _BMC Bioinformatics_, 22(1):586. DOI:[10.1186/s12859‐021‐04483‐z](https://doi.org/10.1186/s12859‐021‐04483‐z).
+> _BMC Bioinformatics_, 22(1):586. DOI:[10.1186/s12859-021-04483-z](https://doi.org/10.1186/s12859-021-04483-z).
