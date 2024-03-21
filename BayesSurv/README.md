@@ -1,3 +1,9 @@
+[![r-universe](https://ocbe-uio.r-universe.dev/badges/BayesSurv)](https://ocbe-uio.r-universe.dev/BayesSurv)
+[![R-CMD-check](https://github.com/ocbe-uio/BayesSurv/workflows/R-CMD-check/badge.svg)](https://github.com/ocbe-uio/psbcSpeedUp/actions)
+[![License](https://img.shields.io/badge/License-GPLv3-brightgreen.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![DOI](https://img.shields.io/badge/doi-10.1186/s12859--021--04483--z-brightgreen)](https://doi.org/10.1186/s12859-021-04483-z)
+
+
 # BayesSurv
 
 
