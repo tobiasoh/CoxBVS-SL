@@ -21,8 +21,6 @@
 #' @keywords survival
 #' @examples
 #'
-#' library("survival")
-#' library("GGally")
 #' library("BayesSurv")
 #' set.seed(123)
 #' 
@@ -54,6 +52,7 @@
 #' fit = BayesSurv(Data=dataset, priorPara=priorParaPooled, 
 #'                 initial=initial, nIter=100)
 #' # predict survival probabilities of the train data
+#' library("GGally")
 #' plotBrier(fit, survObj.new = dataset)
 #' }
 #'
@@ -61,8 +60,8 @@
 plotBrier <- function(object, survObj.new = NULL, 
                       method = "mean", times = NULL, subgroup = 1) {
   
-  if (is.null(times)) 
-    times <- sort(unique(survObj.new$t))
+  # if (is.null(times)) 
+  #   times <- sort(unique(survObj.new$t))
   capture.output(
     Brier_score <- predict.BayesSurv(object, 
                                      survObj.new = survObj.new, 

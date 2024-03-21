@@ -30,8 +30,6 @@
 #' @keywords survival
 #' @examples
 #'
-#' library("survival")
-#' library("GGally")
 #' library("BayesSurv")
 #' set.seed(123)
 #' 
@@ -104,7 +102,12 @@ predict.BayesSurv <- function(object, survObj.new, type = "brier",
 
   if (is.null(times)) {
     times <- sort(unique(survObj.new$t))
-  }
+  } 
+  if (max(times) > max(survObj$t)) {
+    message("NOTE: The evaluation times were truncated by the largest observation time in the training data!")
+    times <- times[times <= max(survObj$t)]
+  } 
+  
   if (length(type) == 1 && type == "brier") {
     times <- seq(0, max(times), length = 100)
   }

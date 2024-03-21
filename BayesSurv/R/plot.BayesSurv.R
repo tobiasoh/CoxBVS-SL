@@ -21,8 +21,6 @@
 #'
 #' @examples
 #'
-#' library("survival")
-#' library("GGally")
 #' library("BayesSurv")
 #' set.seed(123)
 #' 
@@ -55,6 +53,7 @@
 #'                 initial=initial, nIter=100)
 #'
 #' # show posterior mean of coefficients and 95% credible intervals
+#' library("GGally")
 #' plot(fit) + 
 #'   coord_flip() + 
 #'     theme(axis.text.x = element_text(angle = 90, size = 7))

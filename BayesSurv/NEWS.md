@@ -6,18 +6,18 @@
 
 # BayesSurv 0.0-4
 
-* Bring back the original model in Madjar et al. (2021)
-* Extend Madjar et al. (2021) with fixed MRF graph for multiple subgroups
-* Add C++ functions `updateBH_cpp()`, `updateBH_list_cpp()`, `calJpost_helper_cpp`
-* Enable graphical learning for 'Pooled' model
+* Brought back the original model in Madjar et al. (2021)
+* Extended Madjar et al. (2021) with fixed MRF graph for multiple subgroups
+* Enabled graphical learning for 'Pooled' model in Madjar et al. (2021)
+* Added C++ functions `updateBH_cpp()`, `updateBH_list_cpp()`, `calJpost_helper_cpp`
 
 # BayesSurv 0.0-3
 
-* Add thinning parameter
+* Added thinning parameter
 
 # BayesSurv 0.0-2
 
-* Improve help files
+* Improved help files
 
 # BayesSurv 0.0-1
 

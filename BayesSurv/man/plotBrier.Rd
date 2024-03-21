@@ -34,8 +34,6 @@ BayesSurv
 }
 \examples{
 
-library("survival")
-library("GGally")
 library("BayesSurv")
 set.seed(123)
 
@@ -67,6 +65,7 @@ priorParaPooled = list(
 fit = BayesSurv(Data=dataset, priorPara=priorParaPooled, 
                 initial=initial, nIter=100)
 # predict survival probabilities of the train data
+library("GGally")
 plotBrier(fit, survObj.new = dataset)
 }
 

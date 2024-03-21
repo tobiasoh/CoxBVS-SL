@@ -18,13 +18,10 @@ remotes::install_github("tobiasoh/master_thesis/BayesSurv")
 ### Simulate data
 
 ```r
-library("survival")
-library("GGally")
 library("BayesSurv")
 
 # Load the example dataset
 data("simData", package = "BayesSurv")
-
 dataset = list("X" = simData[[1]]$X, 
                "t" = simData[[1]]$time,
                "di" = simData[[1]]$status)
@@ -34,11 +31,7 @@ dataset = list("X" = simData[[1]]$X,
 
 ```r
 ## Initial value: null model without covariates
-library("survival")
-log.like  = coxph( Surv(dataset$t, dataset$di, type = c('right')) ~ 1 )$loglik 
-initial = list("gamma.ini" = rep(0, ncol(dataset$X)), 
-               "beta.ini" = rep(0, ncol(dataset$X)), 
-               "log.like.ini" = log.like)
+initial = list("gamma.ini" = rep(0, ncol(dataset$X)))
 # Prior parameters
 priorParaPooled = list(
   "c0"     = 2,                      # prior of baseline hazard
@@ -48,17 +41,16 @@ priorParaPooled = list(
   "nu0"    = 0.05,                   # hyperparameter in graphical model
   "nu1"    = 5,                      # hyperparameter in graphical model
   "lambda" = 3,                      # hyperparameter in graphical model
-  "a"      = -4, #a0,                # hyperparameter in MRF prior
-  "b"      = 0.1, #b0,               # hyperparameter in MRF prior
+  "a"      = -4,                     # hyperparameter in MRF prior
+  "b"      = 0.1,                    # hyperparameter in MRF prior
   "G"      = simData$G               # hyperparameter in MRF prior
 )   
 
 ## run Bayesian Cox with graph-structured priors
-library("BayesSurv")
 fit = BayesSurv(Data = dataset, priorPara = priorParaPooled, initial = initial, nIter = 100)
 
 ## show posterior mean of coefficients and 95% credible intervals
-library(ggplot2)
+library("GGally")
 plot(fit) + 
   coord_flip() + 
   theme(axis.text.x = element_text(angle = 90, size = 7))

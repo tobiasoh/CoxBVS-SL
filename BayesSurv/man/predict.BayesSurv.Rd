@@ -45,8 +45,6 @@ BayesSurv
 }
 \examples{
 
-library("survival")
-library("GGally")
 library("BayesSurv")
 set.seed(123)
 
