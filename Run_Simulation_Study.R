@@ -13,11 +13,11 @@ source(sprintf("%sSimulation_Study.R", path))
 source(sprintf("%sbrier_calculations.R", path))
 source(sprintf("%splot_helper.R", path))
 
+load(args)
+graph = 
 
 RhpcBLASctl::blas_set_num_threads(20)
 #setting the true parameters, that we use to simulate the data set
-
-
 
 graph = args[1]
 mcmc_iterations = as.integer(args[2])
@@ -199,7 +199,7 @@ priorParaPooled = list(#"eta0"   = eta0,                   # prior of baseline h
                        "tau"    = 0.0375,                 # standard deviation for prior of regression coefficients
                        "cb"     = 20,                     # standard deviation for prior of regression coefficients
                        "pi.ga"  = 0.02, #0.5, ga.pi,                   # prior variable selection probability for standard Cox models
-                       "a"      = -4, #a0,                     # hyperparameter in MRF prior
+                       "a"      = -1, #a0,                     # hyperparameter in MRF prior
                        "b"      = 0.1, #b0,                     # hyperparameter in MRF prior
                        "G"       = G
 ) 
@@ -248,6 +248,7 @@ simulation = simulate(data=dataset,
                       priorPara = priorParaPooled,
                       initial=initial,
                       num.reps=mcmc_iterations,
+                      thinning = thinning,
                       seed=seed)
 
 result = simulation[c("gamma.p", "beta.p", "h.p", "s", "log.jpost", "log.like", "post.gamma", "accept.RW")]
@@ -266,16 +267,16 @@ result = simulation[c("gamma.p", "beta.p", "h.p", "s", "log.jpost", "log.like", 
 
 
 
-if (thinning > 1) {
-  result$gamma.p = result$gamma.p[seq(2,mcmc_iterations+1, thinning),]
-  result$beta.p = result$beta.p[seq(2,mcmc_iterations+1, thinning),]
-  result$h.p = result$h.p[seq(2,mcmc_iterations+1, thinning),]
-  result$post.gamma = result$post.gamma[seq(1,mcmc_iterations, thinning),]
-  result$accept.RW = result$accept.RW[seq(2,mcmc_iterations+1, thinning),]
-  
-  result$log.jpost = result$log.jpost[seq(2,mcmc_iterations+1, thinning)]
-  result$log.like = result$log.like[seq(2,mcmc_iterations+1, thinning)]
-}
+# if (thinning > 1) {
+#   result$gamma.p = result$gamma.p[seq(2,mcmc_iterations+1, thinning),]
+#   result$beta.p = result$beta.p[seq(2,mcmc_iterations+1, thinning),]
+#   result$h.p = result$h.p[seq(2,mcmc_iterations+1, thinning),]
+#   result$post.gamma = result$post.gamma[seq(1,mcmc_iterations, thinning),]
+#   result$accept.RW = result$accept.RW[seq(2,mcmc_iterations+1, thinning),]
+#   
+#   result$log.jpost = result$log.jpost[seq(2,mcmc_iterations+1, thinning)]
+#   result$log.like = result$log.like[seq(2,mcmc_iterations+1, thinning)]
+# }
 
 #need to adapt warmup to the thinnning parameter. Wants half of iterations kept as warmup
 warmup = ceiling( length(seq(1,mcmc_iterations, thinning))/2 )#ceiling(mcmc_iterations/2)

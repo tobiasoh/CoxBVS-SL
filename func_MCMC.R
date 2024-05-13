@@ -1,6 +1,6 @@
 # Main function to perform MCMC sampling
 
-func_MCMC  = function( survObj, priorPara, initial, num.reps, S, method, MRF_2b, seed )  
+func_MCMC  = function( survObj, priorPara, initial, num.reps, S, method, MRF_2b, seed, thinning = 1 )  
 {
   
   # prior parameters for grouped data likelihood of Cox model
@@ -38,6 +38,8 @@ func_MCMC  = function( survObj, priorPara, initial, num.reps, S, method, MRF_2b,
   }else{ #method = "Pooled"
 	  priorPara$s = sort(survObj$t[survObj$c == 1])  
 	  priorPara$s = unique(c(priorPara$s, 2 * max(survObj$t) - max(survObj$t[-which(survObj$t == max(survObj$t))])))
+	  indx = seq(1,length(priorPara$s), length.out = min(length(priorPara$s), 50))
+	  priorPara$s = priorPara$s[indx]
 	  priorPara$J = length(priorPara$s)
 	  
 	  intv              = setting.interval(survObj$t, survObj$c, priorPara$s, priorPara$J)
@@ -61,10 +63,10 @@ func_MCMC  = function( survObj, priorPara, initial, num.reps, S, method, MRF_2b,
 
   # for posterior samples
   mcmcOutcome = list()
-  mcmcOutcome$gamma.p   = ini$gamma.ini
-  mcmcOutcome$beta.p    = ini$beta.ini
-  mcmcOutcome$h.p       = ini$h
-  mcmcOutcome$log.jpost = ini$log.like.ini = NULL
+  mcmcOutcome$gamma.p   = NULL#ini$gamma.ini
+  mcmcOutcome$beta.p    = NULL#ini$beta.ini
+  mcmcOutcome$h.p       = NULL#ini$h
+  mcmcOutcome$log.jpost = NULL#ini$log.like.ini = NULL
   
   if(method == "Pooled"){
   	mcmcOutcome$post.gamma = NULL
@@ -104,6 +106,8 @@ func_MCMC  = function( survObj, priorPara, initial, num.reps, S, method, MRF_2b,
   	RW.accept = vector("list", S )  
   }
   
+  thinning_counter = 0
+  
   # MCMC sampling
   for(M in 1:num.reps){
 	  
@@ -129,7 +133,10 @@ func_MCMC  = function( survObj, priorPara, initial, num.reps, S, method, MRF_2b,
 	  beta.ini  = ini$beta.ini = beta.tmp$beta.ini
 	  
 	  if(method == "Pooled"){
-			RW.accept = rbind(RW.accept, beta.tmp$acceptlee) 
+	    if (thinning_counter%%thinning == 0) {
+	      RW.accept = rbind(RW.accept, beta.tmp$acceptlee) 
+	      
+	    }
 	  }else{
 	    for(g in 1:S){
 			  RW.accept[[g]] = rbind(RW.accept[[g]], beta.tmp$acceptlee[[g]]) 
@@ -158,17 +165,23 @@ func_MCMC  = function( survObj, priorPara, initial, num.reps, S, method, MRF_2b,
   			mcmcOutcome$log.jpost = rbind(mcmcOutcome$log.jpost, log.j)
   			mcmcOutcome$log.like  = rbind(mcmcOutcome$log.like, log.lh)
   		}else{ #method == "Pooled"
-  			mcmcOutcome$log.jpost = c(mcmcOutcome$log.jpost, log.j)
-  			mcmcOutcome$log.like  = c(mcmcOutcome$log.like, log.lh)
+  		  if (thinning_counter%%thinning == 0) {
+  		    mcmcOutcome$log.jpost = c(mcmcOutcome$log.jpost, log.j)
+  		    mcmcOutcome$log.like  = c(mcmcOutcome$log.like, log.lh)
+  		  }
+  			
   		}	
   	}
 	  
 	  
 	  if(method == "Pooled"){
-	    mcmcOutcome$gamma.p    = rbind(mcmcOutcome$gamma.p, gamma.ini, deparse.level = 0)
-  		mcmcOutcome$post.gamma = rbind(mcmcOutcome$post.gamma, sampleGam$post.gamma, deparse.level = 0)
-  		mcmcOutcome$beta.p     = rbind(mcmcOutcome$beta.p, beta.ini, deparse.level = 0)
-  		mcmcOutcome$h.p        = rbind(mcmcOutcome$h.p, h, deparse.level = 0)
+	    if (thinning_counter%%thinning == 0) {
+	      mcmcOutcome$gamma.p    = rbind(mcmcOutcome$gamma.p, gamma.ini, deparse.level = 0)
+	      mcmcOutcome$post.gamma = rbind(mcmcOutcome$post.gamma, sampleGam$post.gamma, deparse.level = 0)
+	      mcmcOutcome$beta.p     = rbind(mcmcOutcome$beta.p, beta.ini, deparse.level = 0)
+	      mcmcOutcome$h.p        = rbind(mcmcOutcome$h.p, h, deparse.level = 0)
+	    }
+	    
   		}else{
   		  for(g in 1:S){
     		  mcmcOutcome$gamma.p[[g]]    = rbind(mcmcOutcome$gamma.p[[g]], (gamma.ini)[[g]], deparse.level = 0)
@@ -187,6 +200,8 @@ func_MCMC  = function( survObj, priorPara, initial, num.reps, S, method, MRF_2b,
   	  print( sessionInfo() )
   	  return(mcmcOutcome)
   	}
+	  
+	  thinning_counter = thinning_counter + 1
   	
   } # the end of MCMC sampling  
 } 

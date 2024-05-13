@@ -152,9 +152,78 @@ bottom_row = plot_grid(NULL,plt_ll$partial_uniform, plt_ll$partial_non_uniform, 
 plot_grid(top_row,bottom_row, ncol=1, nrow=2)#, rel_heights=c(0.1,1,1))
 
 
+#--------
 
 
 
+
+
+#effective sample size calculation
+
+warmup = ceiling(mcmc_iterations/2)
+
+num_runs = 20
+path = "./SimStudy/real_sim_thin6/initial/real_sim_thin6/"
+model_name = ordering
+eff_size_loglike = list("empty" = c(), "partial_uniform" = c(),
+                        "partial_non_uniform" = c(),
+                        "noise" = c())
+eff_size_model_size = list("empty" = c(), "partial_uniform" = c(),
+                           "partial_non_uniform" = c(),
+                           "noise" = c())
+for (i in 1:num_runs) {
+  for (mod in model_name) {
+    load( sprintf("%s%s%i.RData", path, mod, i))
+    loglike = model_output$result$log.like[-(1:warmup)]
+    eff_size = coda::effectiveSize(coda::mcmc(simulation_result$result$log.like[-(1:warmup)], thin=6, start=15000))
+    eff_size_loglike[[mod]] = c(eff_size_loglike[[mod]], eff_size)
+    
+    eff_size_model_size[[mod]] = c(eff_size_model_size[[mod]], coda::effectiveSize(coda::mcmc(rowSums(simulation_result$result$gamma.p[-(1:warmup),]), thin=6, start=15000)))
+    
+    
+  }
+  
+  
+}
+
+#box plots of effective sample size, one for model size and one for loglikelihood
+
+my_data <- data.frame(
+  Group = rep(names(eff_size_loglike), each = 20),
+  Value = unlist(eff_size_loglike)
+)
+
+ggplot(my_data, aes(x=Group, y = Value)) +
+  geom_boxplot() + 
+  labs(title = "Log-likelihood",
+       x = "",#"Simulation scenarios",
+       y = "Effective sample size") +
+  theme_bw() + 
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(size = 12)
+  ) + 
+  scale_x_discrete(labels = labels)
+
+#ylim(0,23)
+
+
+eff_model_size_df <- data.frame(
+  Group = rep(names(eff_size_model_size), each = 20),
+  Value = unlist(eff_size_model_size)
+)
+
+ggplot(eff_model_size_df, aes(x=Group, y = Value)) +
+  geom_boxplot() + 
+  labs(title = "Model size",
+       x = "",#"Simulation scenarios",
+       y = "Effective sample size") +
+  theme_bw() + 
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(size = 12)
+  ) + 
+  scale_x_discrete(labels=labels)
+
+#-----
 
 
 
@@ -166,7 +235,8 @@ labels = c("Empty", "True", "Partial uniform", "Partial non-uniform", "Noise")
 
 load("./SimStudy/real_sim_thin6/plot_info_feb4_sensitivity_non_uni.RData")
 ordering = c("empty", "non_uniform_max10_", "non_uniform_max", "partial_non_uniform10_", "partial_non_uniform", "true")
-labels = c("Empty", "Non-uniform max 10", "Non-uniform max 5", "Partial non-uniform 10", "Partial non-uniform 5",  "True")
+#labels = c("Empty", "Non-uniform max 10", "Non-uniform max 5", "Partial non-uniform 10", "Partial non-uniform 5",  "True")
+labels = c("Empty", "Non-uniform max 10", "Non-uniform max 5", "Non-uniform 10", "Non-uniform 5",  "True")
 
 load("./SimStudy/real_sim_thin6/plot_info_feb3_sensitivity_uni.RData")
 ordering = c("empty", "line", "line6_", "line3_", "partial_uniform", "true")
@@ -176,6 +246,10 @@ load("./SimStudy/real_sim_thin6/plot_info_feb5_sensitivity_noise.RData")
 ordering = c("empty", "true", "noise50_", "noise", "noise200_")
 labels = c("Empty", "True", "50% noise", "100% noise", "200% noise")
 
+
+load("./RealData/march13/plot_info_real.RData")
+ordering = c("output_empty", "output_full")
+labels = c("Empty", "KEGG graph")
 
 #model size plot
 
@@ -188,11 +262,14 @@ ggplot(plot_info$model_size, aes(x = sim_scenario, y = model_size)) +
   labs(#title = "Model size",
        x = "",#"Simulation scenarios",
        y = "Model size") +
-  theme(plot.title = element_text(hjust = 0.5)) + 
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(size=14)
+        ) + 
   scale_x_discrete(labels=labels) + 
   geom_line(aes(group=dataset), linetype=2, linewidth=0.3, alpha=0.5) +
-  geom_point(aes(group=dataset), alpha=0.5, size=1.2) + 
-  ylim(0,23)
+  geom_point(aes(group=dataset), alpha=0.5, size=1.2) #+ 
+  #ylim(0,23)
 
 
 
@@ -208,9 +285,9 @@ upper_quantile=0.975
 CI_empty = t(apply(plot_info$beta_mpm$empty, 2, function(x) quantile(x, c(lower_quantile, upper_quantile))))
 
 warmup = 2500
-#beta_after_warmup = simulation_result$result$beta.p[-(1:warmup),]
+beta_after_warmup = simulation_result$result$beta.p[-(1:warmup),]
 
-#cred_int = t(apply(beta_after_warmup, 2, function(x) quantile(x, c(lower_quantile, upper_quantile))))
+cred_int = t(apply(beta_after_warmup, 2, function(x) quantile(x, c(lower_quantile, upper_quantile))))
 #posterior_means = colMeans(beta_after_warmup)
 
 CI_true = t(apply(plot_info$beta_mpm$true, 2, function(x) quantile(x, c(lower_quantile, upper_quantile))))
@@ -218,9 +295,37 @@ CI_true = t(apply(plot_info$beta_mpm$true, 2, function(x) quantile(x, c(lower_qu
 CI_noise = t(apply(plot_info$beta_mpm$noise, 2, function(x) quantile(x, c(lower_quantile, upper_quantile))))
 CI_partial_uniform = t(apply(plot_info$beta_mpm$partial_uniform, 2, function(x) quantile(x, c(lower_quantile, upper_quantile))))
 CI_partial_non_uniform = t(apply(plot_info$beta_mpm$partial_non_uniform, 2, function(x) quantile(x, c(lower_quantile, upper_quantile))))
+
+
+CI_empty = colMeans(plot_info$beta_mpm$empty) + sd(plot_info$beta_mpm$empty)*c(-1,1)
+CI_true = mean(plot_info$beta_mpm$true) + sd(plot_info$beta_mpm$true)*c(-1,1)
+CI_noise = mean(plot_info$beta_mpm$noise) + sd(plot_info$beta_mpm$noise)*c(-1,1)
+CI_partial_uniform = mean(plot_info$beta_mpm$partial_uniform) + sd(plot_info$beta_mpm$partial_uniform)*c(-1,1)
+CI_partial_non_uniform = mean(plot_info$beta_mpm$partial_non_uniform) + sd(plot_info$beta_mpm$partial_non_uniform)*c(-1,1)
+
+sds = apply(plot_info$beta_mpm$empty, 2, sd)
+means = colMeans(plot_info$beta_mpm$empty)
+CI_empty = matrix(c(means - sds, means + sds), ncol=2)
+
+sds = apply(plot_info$beta_mpm$true, 2, sd)
+means = colMeans(plot_info$beta_mpm$true)
+CI_true = matrix(c(means - sds, means + sds), ncol=2)
+
+sds = apply(plot_info$beta_mpm$noise, 2, sd)
+means = colMeans(plot_info$beta_mpm$noise)
+CI_noise = matrix(c(means - sds, means + sds), ncol=2)
+
+sds = apply(plot_info$beta_mpm$partial_uniform, 2, sd)
+means = colMeans(plot_info$beta_mpm$partial_uniform)
+CI_partial_uniform = matrix(c(means - sds, means + sds), ncol=2)
+
+sds = apply(plot_info$beta_mpm$partial_non_uniform, 2, sd)
+means = colMeans(plot_info$beta_mpm$partial_non_uniform)
+CI_partial_non_uniform = matrix(c(means - sds, means + sds), ncol=2)
+
 x_offset = 0.1
 
-num_vars = 20
+num_vars = 200
 num_runs = 20
 
 xlabels = c()
@@ -234,6 +339,7 @@ gfg = data.frame(x=num_vars:1, y=colMeans(plot_info$beta_mpm$true)[num_vars:1], 
 trueBeta = simulation_result$truePara$beta
 
 beta_plt = ggplot(data=gfg, aes(x,y)) + 
+  theme_bw() + 
   geom_hline(yintercept = 0, linewidth = 0.5, color = "black") +
 
   geom_linerange(aes(x - x_offset, ymin=CI_empty[1:num_vars,1], ymax= CI_empty[1:num_vars,2]), color="grey" ) + 
@@ -259,9 +365,10 @@ beta_plt = ggplot(data=gfg, aes(x,y)) +
   #  theme_bw() + 
   theme(plot.title = element_text(hjust = 0.5), 
         legend.title=element_blank(),
-        legend.position="bottom") + 
+        legend.position="bottom",
+        legend.text = element_text(size=10)) + 
         #axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(x="", y = "β conditional posterior mean +/- SD of β") + 
+  labs(x="", y = "Mean of MPM β-estimates +/- SD") +# "β conditional posterior mean +/- SD of β") + 
   #ggtitle("β posterior means and 95% credible intervals") + 
   scale_colour_manual("", 
                       breaks = c("Empty", "True", "Partial uniform", "Partial non-uniform", "Noise", "True coefficient value"),
@@ -283,6 +390,7 @@ beta_plt
 #manhattan plot
 num_runs = 20
 num_vars = 200
+num_vars = 489
 
 xlabels = c()
 for (i in num_vars:1) {
@@ -318,6 +426,12 @@ manhattan = ggplot(data=gfg, aes(x,y)) +
   
   
   
+  #geom_point(aes(x - 2*x_offset, y=post.gamma_mean$empty, color="Empty")) + 
+  #geom_point(aes(x- x_offset, y=post.gamma_mean$true[1:num_vars], color="True")) +
+  #geom_point(aes(x, post.gamma_mean$partial_uniform[1:num_vars], color="Partial uniform")) +
+  #geom_point(aes(x+x_offset, post.gamma_mean$partial_non_uniform[1:num_vars], color="Partial non-uniform")) +
+  #geom_point(aes(x+x_offset*2, post.gamma_mean$noise[1:num_vars], color="Noise")) +
+  
   geom_point(aes(x - 2*x_offset, y=post.gamma_mean$empty, color="Empty")) + 
   geom_point(aes(x- x_offset, y=post.gamma_mean$true[1:num_vars], color="True")) +
   geom_point(aes(x, post.gamma_mean$noise50_[1:num_vars], color="Partial uniform")) +
@@ -326,13 +440,15 @@ manhattan = ggplot(data=gfg, aes(x,y)) +
   
   scale_x_continuous(labels = rev(c("X1", "X50", "X100", "X150", "X200")))+# breaks=seq(1,num_vars), minor_breaks = seq(1,num_vars)) + 
   scale_y_continuous(breaks=c(0, 0.5, 1), limits=c(0,1)) + 
+  theme_bw() + 
 
 theme(plot.title = element_text(hjust = 0.5), 
       legend.title=element_blank(),
-      legend.position="bottom") + 
+      legend.position="bottom",
+      legend.text = element_text(size = 10)) + 
   
   #axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(x="", y = "Posterior mean of the inclusion indicators γ") + #"γ posterior mean +/- SD of γ") + 
+  labs(x="", y = "Mean posterior inclusion probability") + #"Posterior mean of the inclusion indicators") + #"γ posterior mean +/- SD of γ") + 
   #ggtitle("γ posterior means and 95% credible intervals") + 
   scale_colour_manual("", 
                       breaks = c("Empty", "True", "Partial uniform", "Partial non-uniform", "Noise"),# "True coefficient value"),
@@ -397,15 +513,17 @@ data_group = ibs_df[!is.na(ibs_df$dataset),]
 
 plot_ibs = ggplot(ibs_df, aes(x = sim_scenario, y = ibs, label=sim_scenario)) +
   geom_boxplot() +
+  theme_bw() + 
   geom_line(data=data_group, aes(group=dataset), linetype=2, linewidth=0.3, alpha=0.5) +
   geom_point(data=data_group, aes(group=dataset), alpha=0.5, size=1.2) + 
   labs(#title = "Integrated Brier score",
     x = "", #"Simulation scenarios",
     y = "IBS") +
-  theme(plot.title = element_text(hjust = 0.5))+ 
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(size=12))+ 
   #geom_segment(aes(x=0.75, xend=1.25, y=km_ibs, yend=km_ibs), color="red") + 
-  scale_x_discrete(labels=c("Kaplan-Meier", labels)) +
-  ylim(0,max(km_ibs))
+  scale_x_discrete(labels=c("Kaplan-Meier", labels)) #+
+  #ylim(0,max(km_ibs))
 #geom_text_repel()
 #geom_jitter(color="black", alpha = 0.5) + 
 
@@ -413,6 +531,13 @@ plot_ibs = ggplot(ibs_df, aes(x = sim_scenario, y = ibs, label=sim_scenario)) +
 
 plot_ibs
 
+
+
+#wilcoxon signed rank test ibs
+wilcox.test(plot_info$ibs$ibs[plot_info$ibs$sim_scenario == "true"], 
+            plot_info$ibs$ibs[plot_info$ibs$sim_scenario == "noise200_"], 
+            paired = T, 
+            alternative="less")
 
 
 

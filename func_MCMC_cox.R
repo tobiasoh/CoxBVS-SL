@@ -147,6 +147,7 @@ UpdateGamma <- function(sobj, priorPara, ini, S, method, MRF_2b)
 # Helper function for "UpdateRP.lee11" function.
 
 UpdateRP.lee11.helper <- function(n, p, x, J, ind.r, ind.d, ind.r_d, be.ini, ga.ini, h, tau, cb){
+  print("Using R UpdateRP.lee11.helper...")
   acceptl = rep(0, p)
 
   for (j in 1:p) {
@@ -227,11 +228,32 @@ UpdateRP.lee11.helper <- function(n, p, x, J, ind.r, ind.d, ind.r_d, be.ini, ga.
     logprop.ini = dnorm(be.ini[j], mean = be.prop.me, sd = sqrt(be.prop.var), log = TRUE)
     
     logR = loglh.prop - loglh.ini + logprior.prop - logprior.ini + logprop.ini - logprop.prop
+
     u = log(runif(1)) < logR
-    if (u == 1) {
-      be.ini[j] = be.prop[j]
-      acceptl[j] = acceptl[j] + 1
-    } 
+    # result = tryCatch( {
+    #   if (u == 1) {
+    #     be.ini[j] = be.prop[j]
+    #     acceptl[j] = acceptl[j] + 1
+    #   } 
+    # }, error = function(e) {
+    #   print("logR:")
+    #   print(logR)
+    #   print("-----")
+    #   print(u)
+    #   car("Error occured:", conditionMessage(e))
+    # }
+    #   
+    # )
+    
+    #this block sometimes gives an error, if it does, skip
+    try( {
+      if (u == 1) {
+             be.ini[j] = be.prop[j]
+             acceptl[j] = acceptl[j] + 1
+           } 
+    }
+    )
+    
   }
   return(list('be.ini' = be.ini, 'acceptl' = acceptl))  
 }
@@ -254,10 +276,14 @@ UpdateRP.lee11 <- function(sobj, priorPara, ini, S, method)
     be.ini  = ini$beta.ini
     ga.ini  = ini$gamma.ini
     h       = ini$h
+  
+    # n, p, x, J, ind.r, ind.d, ind.r_d, be.ini, ga.ini, h, tau, cb
+    #erg = UpdateRP.lee11.helper(n, p, x, J, ind.r, ind.d, ind.r_d, be.ini, ga.ini, h, tau, cb)
+    erg = UpdateRP.lee11.helper_c(p, x, J, ind.r, ind.d, ind.r_d, be.ini, ga.ini, h, tau, cb)
+    #print(dim(erg$be.ini))
     
-    erg = UpdateRP.lee11.helper(n, p, x, J, ind.r, ind.d, ind.r_d, be.ini, ga.ini, h, tau, cb)
-    
-    beta.ini  = erg$be.ini
+    beta.ini  = t(erg$be.ini)
+    #beta.ini  = erg$be.ini
     acceptlee = erg$acceptl
     
   }else{
@@ -274,7 +300,7 @@ UpdateRP.lee11 <- function(sobj, priorPara, ini, S, method)
       ga.ini  = ini$gamma.ini[[g]]
       h       = ini$h[[g]]
       
-      erg = UpdateRP.lee11.helper(n, p, x, J, ind.r, ind.d, ind.r_d, be.ini, ga.ini, h, tau, cb)
+      erg = UpdateRP.lee11.helper_c(n, p, x, J, ind.r, ind.d, ind.r_d, be.ini, ga.ini, h, tau, cb)
       
       beta.ini[[g]] = erg$be.ini
       acceptlee[[g]] = erg$acceptl

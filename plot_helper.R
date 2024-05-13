@@ -6,7 +6,7 @@ library(survival)
 library(dplyr)
 
 path = "/data/tobiasoh"
-#path = "."
+path = "."
 source(sprintf("%s/Data_Simulation.R", path))
 load(sprintf("%s/Weibull_param.RData", path) )
 
@@ -20,15 +20,6 @@ avg_model_size = function(result) {
 
 model_size_plot = function(sim_scenarios, warmup) {
   num_runs = length(sim_scenarios[[1]])
-  
-  
-  
-  #avg_true = rep(0, num_runs)
-  #avg_empty = rep(0, num_runs)
-  #avg_partial_uniform = rep(0, num_runs)
-  #avg_non_uniform = rep(0, num_runs)
-  #avg_noise = rep(0, num_runs)
-  
   df <- data.frame( lapply(setNames(vector("list", length = length(sim_scenarios)), 
                             names(sim_scenarios)), function(x) rep(0, num_runs))
   )
@@ -43,41 +34,16 @@ model_size_plot = function(sim_scenarios, warmup) {
     
     for (i in 1:num_runs) {
       
-      df_$model_size[num_runs*(sim_scen-1) + i] = rowSums( sim_scenarios[[sim_scen]][[i]]$result$post.gamma[-(1:warmup),] > 0.5 )
+      #df_$model_size[num_runs*(sim_scen-1) + i] = rowSums( sim_scenarios[[sim_scen]][[i]]$result$post.gamma[-(1:warmup),] > 0.5 )
+      df_$model_size[num_runs*(sim_scen-1) + i] = sum( colMeans(sim_scenarios[[sim_scen]][[i]]$result$post.gamma[-(1:warmup),]) > 0.5 )#mean( rowSums( sim_scenarios[[sim_scen]][[i]]$result$post.gamma[-(1:warmup),] > 0.5 ) )
       df_$dataset[num_runs*(sim_scen-1) + i] = i
       df_$sim_scenario[num_runs*(sim_scen-1) + i] = scenarios[[sim_scen]]
-      
-      
-      #df[[sim_scen]][i] = rowSums( sim_scenarios[[sim_scen]][[i]]$result$post.gamma[-(1:warmup),] > 0.5 )
-      
-      
-    #   avg_true = rowSums( sim_scenarios$true[[i]]$result$post.gamma[-(1:warmup),] > 0.5 )#avg_model_size(true[[i]]$result)
-    #   avg_empty = rowSums( sim_scenarios$empty[[i]]$result$post.gamma[-(1:warmup),] > 0.5 ) #avg_model_size(empty[[i]]$result)
-    #   avg_partial_non_uniform = rowSums( sim_scenarios$partial_non_uniform[[i]]$result$post.gamma[-(1:warmup),] > 0.5 )#avg_model_size(partial_non_uniform[[i]]$result)
-    #   avg_partial_uniform = rowSums( sim_scenarios$partial_uniform[[i]]$result$post.gamma[-(1:warmup),] > 0.5 )#avg_model_size(partial_uniform[[i]]$result)
-    #   avg_noise = rowSums( sim_scenarios$noise[[i]]$result$post.gamma[-(1:warmup),] > 0.5 ) #avg_model_size(noise[[i]]$result)
-    #   
-    #   avg_line = rowSums( sim_scenarios$line[[i]]$result$post.gamma[-(1:warmup),] > 0.5 ) #avg_model_size(noise[[i]]$result)
-    #   avg_non_uniform_max = rowSums( sim_scenarios$non_uniform_max[[i]]$result$post.gamma[-(1:warmup),] > 0.5 ) #avg_model_size(noise[[i]]$result)
-     
+  
+  
     }
   }
-    
-  #df = data.frame(true=avg_true, empty=avg_empty, partial_uniform = avg_partial_uniform, 
-  #                partial_non_uniform=avg_partial_non_uniform, noise=avg_noise,
-  #                line=avg_line, non_uniform_max=avg_non_uniform_max)
-
-  
-  
-  
-  
-  #df_long = pivot_longer(df, cols=colnames(df), cols_vary="slowest")
-  #colnames(df_long) = c("sim_scenario", "model_size")
   
   return( df_)
-
-  
-  
   
 }
 
@@ -131,14 +97,6 @@ create_metric_table = function(sim_scenarios) {
   names(metric) = names(sim_scenarios)
   #print(metric)
 
-  #metric = list("true" = df,
-  #              "empty" = data.frame(df),
-  #              "partial_non_uniform" = data.frame(df),
-  #              "partial_uniform" = data.frame(df),
-  #              "noise" = data.frame(df),
-  #              "line"= data.frame(df),
-  #              "non_uniform_max" = data.frame(df))
-  
 
   
   for (sim_scen in names(metric)) {  
@@ -146,15 +104,6 @@ create_metric_table = function(sim_scenarios) {
       
       metric[[sim_scen]][i,] = sim_scenarios[[sim_scen]][[i]]$metrics
       
-      #might be better to use purrr::map2 here 
-      #metric$true[i,] = sim_scenarios$true[[i]]$metrics
-      #metric$empty[i,] = sim_scenarios$empty[[i]]$metrics
-      #metric$partial_non_uniform[i,] = sim_scenarios$partial_non_uniform[[i]]$metrics
-      #metric$partial_uniform[i,] = sim_scenarios$partial_uniform[[i]]$metrics
-      #metric$noise[i,] = sim_scenarios$noise[[i]]$metrics
-      
-      #metric$line[i,] = sim_scenarios$noise[[i]]$metrics
-      #metric$non_uniform_max[i,] = sim_scenarios$noise[[i]]$metrics
     }
   }
 
@@ -197,15 +146,8 @@ create_metric_table = function(sim_scenarios) {
 }
 
 
-get_simulations = function(path, scenario_names, num_runs) {
-  #true = list()
-  #empty = list()
-  #partial_uniform = list()
-  #partial_non_uniform = list()
-  #noise = list()
-  #line = list()
-  #non_uniform_max = list()
-  
+get_simulations = function(path, scenario_names, num_runs, real_data=F) {
+
   sim_scenarios <- vector("list", length = length(scenario_names))
   names(sim_scenarios) = scenario_names
 
@@ -214,6 +156,9 @@ get_simulations = function(path, scenario_names, num_runs) {
   for (sim_scen in names(sim_scenarios)) {
     for (i in 1:num_runs) {
       load(sprintf("%s%s%d.RData", path, sim_scen, i))
+      if (real_data) {
+        simulation_result = model_output
+      }
       sim_scenarios[[sim_scen]] = c(sim_scenarios[[sim_scen]], list(simulation_result))
     }
   }
@@ -242,6 +187,7 @@ ibs_plot2 = function(sim_scenarios) {
   
   for (scenario in 1:length(scenarios)) {
     for (i in 1:num_runs) {
+      #print(sim_scenarios[[scenarios[[scenario]]]][[i]]$ibs)
       
       df_$ibs[num_runs*(scenario-1) + i] = mean( sim_scenarios[[scenarios[[scenario]]]][[i]]$ibs )
       df_$dataset[num_runs*(scenario-1) + i] = i
@@ -258,6 +204,7 @@ ibs_plot2 = function(sim_scenarios) {
 
 
 
+
 posterior_gamma = function(sim_scenarios, warmup) {
   num_runs = length(sim_scenarios[[1]])
   num_vars = dim(sim_scenarios[[1]]$result$beta.p)[2]
@@ -265,6 +212,8 @@ posterior_gamma = function(sim_scenarios, warmup) {
   scenarios = names(sim_scenarios)
   
   p = length(sim_scenarios[[1]][[1]]$truePara$beta)
+  p = ncol(sim_scenarios[[1]][[1]]$result$gamma.p)
+  #print(num_runs)
   matr = matrix(0, nrow=num_runs, ncol = p)
   post.gamma = lapply(setNames(vector("list", length = length(sim_scenarios)), 
                        scenarios), function(x) matr)
@@ -284,7 +233,7 @@ posterior_gamma = function(sim_scenarios, warmup) {
   
   
 }
-  
+
 
 
 
@@ -330,41 +279,15 @@ beta_conditional_mean = function(sim_scenarios) {
   
   warmup = ceiling( sim_scenarios[[1]][[1]]$mcmcIterations / (2*sim_scenarios[[1]][[1]]$thinning ) )
   p = dim(sim_scenarios[[1]][[1]]$result$beta.p)[2]
-  
-  #df = data.frame(sim_scenario=rep("none", num_runs*length(scenarios)),
-  #                beta_mpm = matrix(0, nrow=p, ncol=num_runs*length(scenarios)))
-  
+
   matr = matrix(0, nrow=num_runs, ncol = p)
   df = lapply(setNames(vector("list", length = length(sim_scenarios)), 
                        names(sim_scenarios)), function(x) matr)
-  #df = list("true" = matr, "empty"=matr, "noise"=matr, "partial_uniform"=matr, "partial_non_uniform"=matr, "line"=matr, "non_uniform_max"=matr)
-  
+
   
   for (scenario in scenarios) {
     for (i in 1:num_runs) {
-      #beta_mean <- colMeans(sim_scenarios[[scenario]][[i]]$result$beta[-(1:warmup),]) # instead of posterior mean of betas, better to use MPM betas here
-      #gamma_mean <- colMeans(sim_scenarios[[scenario]][[i]]$result$gamma.p[-(1:warmup),])
-      #beta_mpm <- beta_mean / gamma_mean
-      #beta_mpm[gamma_mean <= 0.5] <- 0
-      # gamma_1 = which( sim_scenarios[[scenario]][[i]]$result$gamma.p[-(1:warmup),] == 1, arr.ind=T )
-      # beta_no_warmup = sim_scenarios[[scenario]][[i]]$result$beta.p[-(1:warmup),]
-      # beta_conditional = beta_no_warmup[gamma_1]
-      # 
-      # #beta_no_warmup * sim_scenarios[[scenario]][[i]]$result$gamma.p[-(1:warmup)]
-      # 
-      # 
-      # print(dim(beta_no_warmup))
-      # print(dim(gamma_1))
-      # 
-      # print(dim(beta_conditional))
-      # beta_cond_mean = colMeans(beta_conditional)
-      # 
-      # print(dim(beta_cond_mean))
-      # print(dim(df[[scenario]][i,]))
-      # 
-      # df[[scenario]][i,] = beta_cond_mean
-      # 
-      
+
       
       for (bet in 1:p) {
         gamma_1 = which( sim_scenarios[[scenario]][[i]]$result$gamma.p[-(1:warmup),][,bet] == 1)
@@ -398,7 +321,7 @@ create_test_dataset = function(n, p, truePara, Surv.e, Surv.c) {
 }
 
 
-add_ibs = function(sim_scenarios, time_point, test_dataset) {
+add_ibs = function(sim_scenarios, time_point, test_dataset, time_step=0.1, real_data=F, X=NA, meta=NA) {
   num_runs = length(sim_scenarios[[1]])
   x.test = test_dataset$X
   time.test = test_dataset$time
@@ -406,33 +329,70 @@ add_ibs = function(sim_scenarios, time_point, test_dataset) {
   
  
   
-  warmup = ceiling( sim_scenarios$true[[1]]$mcmcIterations / (2*sim_scenarios$true[[1]]$thinning ) )
+  warmup = ceiling( sim_scenarios[[1]][[1]]$mcmcIterations / (2*sim_scenarios[[1]][[1]]$thinning ) )
   
-  km_models = kaplan_meier(num_runs, "/data/tobiasoh/SimStudy/datasets")
+  #km_models = kaplan_meier(num_runs, "/data/tobiasoh/SimStudy/datasets")
   
   scenarios = names(sim_scenarios)
 
   for (scenario in scenarios) {
     for (i in 1:num_runs) {
+      if (real_data) {
+        test_indices = sim_scenarios[[scenario]][[i]]$test_indices
+        sim_scenarios[[scenario]][[i]]$X.train = X[-test_indices,]
+        sim_scenarios[[scenario]][[i]]$survival_data$time.train = meta[-test_indices,]$time
+        sim_scenarios[[scenario]][[i]]$survival_data$status.train = as.integer(meta[-test_indices,]$vital_status == "Dead")
+        
+        x.test = X[test_indices,]
+        time.test = meta[test_indices,]$time
+        status.test = as.integer(meta[test_indices,]$vital_status == "Dead")
+        
+        #print(x.test)
+        #print(time.test)
+        #print(status.test)
+        
+        
+        #max_event_time = max(time.test[which(status.test==1)])
+        
+        #print("x.test, time.test, status.test")
+        #print(sum(is.na(x.test)))
+        #print(sum(is.na(time.test)))
+        #print(sum(is.na(status.test)))
+      }
+      #print(sum(is.na(sim_scenarios[[scenario]][[i]]$X.train)))
+      #print(sum(is.na(sim_scenarios[[scenario]][[i]]$survival_data$time.train)))
+      #print(sum(is.na(sim_scenarios[[scenario]][[i]]$survival_data$status.train)))
+      
+      
       
       if (scenario != "kaplan_meier") {
         
       
-      beta_mean <- colMeans(sim_scenarios[[scenario]][[i]]$result$beta[-(1:warmup),]) # instead of posterior mean of betas, better to use MPM betas here
+      beta_mean <- colMeans(sim_scenarios[[scenario]][[i]]$result$beta.p[-(1:warmup),]) # instead of posterior mean of betas, better to use MPM betas here
       gamma_mean <- colMeans(sim_scenarios[[scenario]][[i]]$result$gamma.p[-(1:warmup),])
       beta_mpm <- beta_mean / gamma_mean
       beta_mpm[gamma_mean <= 0.5] <- 0
-      lp <- as.vector(sim_scenarios[[scenario]][[i]]$X.train %*% beta_mpm)
-      times <- sim_scenarios[[scenario]][[i]]$survival_data$time.train
-      status <- sim_scenarios[[scenario]][[i]]$survival_data$status.train
-      data_train <- data.frame(time = times, status = status, lp = lp)
-      bayes_train <- coxph(Surv(time, status) ~ lp, 
-                           data = data_train, y = TRUE, x = TRUE)
+      
+      #lp <- as.vector(sim_scenarios[[scenario]][[i]]$X.train %*% beta_mpm)
+      #times <- sim_scenarios[[scenario]][[i]]$survival_data$time.train
+      #status <- sim_scenarios[[scenario]][[i]]$survival_data$status.train
+      #data_train <- data.frame(time = times, status = status, lp = lp)
+      #bayes_train <- coxph(Surv(time, status) ~ lp, 
+      #                     data = data_train, y = TRUE, x = TRUE)
+      
+      print(dim(x.test))
+      print(length(beta_mpm))
       
       lp_test <- as.vector(x.test %*% beta_mpm)
       data_test <- data.frame(time = time.test, status = status.test, lp = lp_test)
+      
       bayes_test <- coxph(Surv(time, status) ~ lp, 
-                           data = data_test, y = TRUE, x = TRUE)
+                          data = data_test, y = TRUE, x = T)
+      if (all(lp_test == 0)) {
+        bayes_test = coxph(Surv(time, status) ~ 1, 
+                           data = data_test, y = TRUE, x = T)
+      }
+      
       
       }
       else {
@@ -440,20 +400,34 @@ add_ibs = function(sim_scenarios, time_point, test_dataset) {
         data_test = data.frame(time = time.test, status = status.test, lp = 1)
         bayes_test = survfit(km_models[i], data_test)
       }
-
+      
+      
+      print(sum(is.na(bayes_test)))
+      #print(data_test$lp)
+      print(sum(is.na(beta_mpm)))
+      print(sum(is.na(coef(bayes_test))))
+      print(sum(which(is.na(coef(bayes_test)))))
+      print(is.na(coef(bayes_test)))
+      
+      print(cat("Dataset nr ", i))
+      print(cat( "Coef Bayes_test: ", coef(bayes_test)))
+      
+      max_event_time = max(time.test[which(status.test==1)])
       
       library(riskRegression)
       Brier_train <- riskRegression::Score(list("Brier_test" = bayes_test), 
                                            formula = Surv(time, status) ~ 1, 
                                            data = data_test, conf.int = FALSE, 
                                            metrics = "brier", summary = "ibs", 
-                                           times = seq(0, time_point, 0.1))$Brier$score#sort(unique(data_train$time)))$Brier$score
+                                           times = seq(0, max_event_time, time_step))$Brier$score#sort(unique(data_train$time)))$Brier$score
       #times = time_star)$Brier$score
       Brier_score <- Brier_train[Brier_train$model != "Null model", ]
-      plot(Brier_score$Brier ~ Brier_score$times, type = "S", lty = 1, 
-           xlab = "time", ylab = "Brier score", main = "riskRegression")
+      #plot(Brier_score$Brier ~ Brier_score$times, type = "S", lty = 1, 
+      #     xlab = "time", ylab = "Brier score", main = "riskRegression")
+
       
-      sim_scenarios[[scenario]][[i]]$ibs <- Brier_score$IBS[time_point]#which.max(Brier_score$times)]
+      sim_scenarios[[scenario]][[i]]$ibs <- Brier_score$IBS[which.max(Brier_score$times)]
+      #print(sprintf("IBS for %s, ds %d: %f", scenario, i, sim_scenarios[[scenario]][[i]]$ibs))
       
       
       
@@ -617,9 +591,196 @@ kaplan_meier_ibs = function(km_models, time_point, path_test_dataset) {
     #plot(Brier_score$Brier ~ Brier_score$times, type = "S", lty = 1, 
     #     xlab = "time", ylab = "Brier score", main = "riskRegression")
     
-   km_ibs[i] <- Brier_score$IBS[time_point]#which.max(Brier_score$times)]
+   #km_ibs[i] <- Brier_score$IBS[which(max(Brier_score$times))]#[time_point]#which.max(Brier_score$times)]
+    km_ibs[i] <- Brier_score$IBS[length(Brier_score$IBS)]
+  }
+  return( km_ibs)
+}
+
+
+
+km_models_real_data = function(num_runs, path_to_test_indices, meta) {
+  
+  km_models = list()
+  
+  for (i in 1:num_runs) {
+    load( sprintf("%s/test_indices%d.RData", path_to_test_indices, i) )
+    time.train = meta[-test_indices,]$time
+    print(time.train)
+    status.train = as.integer( meta[-test_indices,]$vital_status == "Dead" )
+    km_fit <- survfit(Surv(time.train, status.train) ~ 1)
+    #append(km_models, list(km_fit))
+    km_models[[i]] = km_fit
+    
+  }
+  
+  return( km_models )
+}
+
+
+km_ibs_real_data = function(km_models, time_point, meta, path_to_test_indices) {
+
+  
+  
+  
+  
+  km_ibs = rep(0, length(km_models))
+
+  
+  for (i in 1:length(km_models)) {
+    load(sprintf("%s/test_indices%d.RData", path_to_test_indices, i))
+    time.test = meta[test_indices,]$time
+    status.test = as.integer( meta[test_indices,]$vital_status == "Dead" )
+    data_test = data.frame(time=time.test, status=status.test, lp=1)
+    max_event_time = max(time.test[which(status.test==1)])
+    #bayes_test = predict(km_models[[i]], newdata=Surv(time.test, status.test), type="survival")
+    
+    
+    library(riskRegression)
+    Brier_train <- riskRegression::Score(list("Brier_test" = km_models[[i]]), 
+                                         formula = Surv(time, status) ~ 1, 
+                                         data = data_test, conf.int = FALSE, 
+                                         metrics = "brier", summary = "ibs", 
+                                         times = seq(0, time_point, 30))$Brier$score#sort(unique(data_train$time)))$Brier$score
+    #times = time_star)$Brier$score
+    Brier_score <- Brier_train[Brier_train$model != "Null model", ]
+    #plot(Brier_score$Brier ~ Brier_score$times, type = "S", lty = 1, 
+    #     xlab = "time", ylab = "Brier score", main = "riskRegression")
+    
+    km_ibs[i] <- Brier_score$IBS[which.max(Brier_score$times)] #[time_point]#
     
   }
   return( km_ibs)
+  
+}
+
+
+cox_clin_ibs = function(path_to_test_indices, X, meta, num_runs=20) {
+  
+  cox_ibs = rep(0, num_runs)
+  
+  for (i in 1:num_runs) {
+    load(sprintf("%s/test_indices%d.RData", path_to_test_indices, i))
+    
+    time.train = meta[-test_indices,]$time
+    status.train = as.integer( meta[-test_indices,]$vital_status == "Dead")
+    age = X[-test_indices,490]
+    treatment = X[-test_indices, 491]
+    data_train = data.frame(time=time.train, status=status.train, age=age, treatment = treatment)
+    model_train = coxph(Surv(time, status) ~ age + treatment, data=data_train, x=T)
+    
+    x.test = X[test_indices, c(490,491)]
+    time.test = meta[test_indices,]$time
+    status.test = as.integer( meta[test_indices,]$vital_status == "Dead" )
+    lp_test = model_train$coefficients %*% t(x.test)
+    data_test = data.frame(time=time.test, status=status.test, age=X[test_indices,490], treatment=X[test_indices,491])#lp=lp_test)
+    max_event_time = max(time.test[which(status.test==1)])
+    #bayes_test = predict(km_models[[i]], newdata=Surv(time.test, status.test), type="survival")
+    
+    
+    
+    library(riskRegression)
+    Brier_train <- riskRegression::Score(list("Brier_test" = model_train), 
+                                         formula = Surv(time, status) ~ 1, 
+                                         data = data_test, conf.int = FALSE, 
+                                         metrics = "brier", summary = "ibs", 
+                                         times = seq(0, max_event_time, 30))$Brier$score#sort(unique(data_train$time)))$Brier$score
+    #times = time_star)$Brier$score
+    Brier_score <- Brier_train[Brier_train$model != "Null model", ]
+    #plot(Brier_score$Brier ~ Brier_score$times, type = "S", lty = 1, 
+    #     xlab = "time", ylab = "Brier score", main = "riskRegression")
+    
+    cox_ibs[i] <- Brier_score$IBS[which.max(Brier_score$times)] #[time_point]#
+    
+  }
+  
+  return( cox_ibs )
+}
+
+feature_stability = function(data, num_runs, num_vars, cutoff=0.5) {
+  #num_runs = #nrow(data[[1]])
+  num_selected = rep(0, num_vars)#rep(0, ncol(data[[1]]))
+  
+  num_selected <- lapply(setNames(vector("list", length(data)), names(data)), function(x) rep(0, length(num_selected)))
+  
+  
+  for (scenario in names(data)) {
+    for (i in 1:num_runs) {
+      selected = as.integer( data[[scenario]][[i]] > cutoff )
+      selected = as.integer( data[[scenario]][i,] > cutoff)
+      num_selected[[scenario]] = num_selected[[scenario]] + selected
+    }
+  }
+  
+  return( num_selected )
+  
+
+  
+}
+
+
+beta_cred_ints = function(sim_scenarios, warmup, quantiles = c(0.025, 0.975) ) {
+  num_vars = ncol( sim_scenarios[[1]][[1]]$result$beta.p)
+  num_runs = length(sim_scenarios[[1]])
+  cred_int = data.frame(lower = rep(0, num_vars), upper=rep(0,num_vars))
+  
+  cred_int = matrix(0, nrow=num_vars, ncol=2)
+  
+  cred_int_all_runs = rep(cred_int, num_runs)
+  cred_int_all_runs = lapply(vector("list", length=num_runs), function(x) cred_int)
+  
+  #print( dim(cred_int_all_runs[[1]]) )
+                        
+  df = lapply(setNames(vector("list", length = length(sim_scenarios)), 
+                       names(sim_scenarios)), function(x) cred_int_all_runs)
+  
+  #print( dim(cred_int_all_runs))
+  
+  for (scen in names(sim_scenarios)) {
+    for (i in 1:num_runs) {
+      beta_mcmc = sim_scenarios[[scen]][[i]]$result$beta.p[-c(1:warmup),]
+      #print(dim((df[[scen]])))
+      #print(dim(df))
+      df[[scen]][[i]] = t( apply( beta_mcmc, 2, function(x) quantile(x, probs=quantiles) ) )
+      
+    }
+  }
+  #print("Final dim of df")
+  #print(dim(df[[1]]))
+  
+  return( df )
+  
+}
+
+if (F) {
+  cred_int = data.frame(lower=rep(0,489), upper=rep(0,489))
+  cred_int = matrix(0, nrow=489, ncol=2)
+  cred_int_all_runs = rep(cred_int, 20)
+  cred_int_all_runs = lapply(vector("list", length=20), function(x) cred_int)
+  df = lapply(setNames(vector("list", length = 2), 
+                       c("empty", "full")), function(x) cred_int_all_runs)
+}
+
+
+time_dep_brier_func = function(sim_scenarios, warmup) {
+  
+}
+
+
+var_selection_cred_int = function(plot_info) {
+  num_runs = nrow(plot_info$beta_mpm[[1]])
+  vars_selected = plot_info$beta_cred_int
+  for (scenario in names(vars_selected)) {
+    for (i in 1:num_runs) {
+      vars_mpm = as.integer(plot_info$beta_mpm[[scenario]][i,] != 0)
+      vars_cred_int = as.integer(!(plot_info$beta_cred_int[[scenario]][[i]][,1] < 0 & plot_info$beta_cred_int[[scenario]][[i]][,2] > 0))
+      vars_selected[[scenario]][[i]] = vars_mpm * vars_cred_int
+      
+      
+    }
+  }
+  
+  return( vars_selected )
+  
 }
 
