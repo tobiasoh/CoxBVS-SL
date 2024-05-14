@@ -19,7 +19,6 @@ this paper might be removed if they are not necessary to my thesis.
 ### Code for the MCMC algorithm
 Files that are used for the MCMC simulation are:
 
-
 #### func_MCMC.R
 Main function for performing MCMC sampling of all parameters and storage of posterior results.
 
@@ -27,8 +26,8 @@ Main function for performing MCMC sampling of all parameters and storage of post
 Helper functions for MCMC sampling of Cox model parameters and joint posterior distribution.
 
 
-### The simulation studies
 
+### The simulation studies
 
 #### Data_Simulation.R
 Helper functions for generation of simulated training and test data sets, including simulated gene expression data and survival outcome. 
@@ -45,6 +44,7 @@ File that generates different values needed for the plots in the thesis from the
 
 #### final_plots.R
 Code for the plots in the Simulations chapters.
+
 
 
 ### Application: The TCGA breast cancer data set
