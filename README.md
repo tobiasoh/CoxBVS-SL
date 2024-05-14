@@ -1,4 +1,4 @@
-# Cox model with Bayesian Variable Selection 
+# Discovery of prognostic biomarkers using a Bayesian Cox model with molecular pathway information
 
 This code is based on the R source code and data associated with the publication *Madjar K, Zucknick M, Ickstadt K, and Rahnenführer J (2020): Combining heterogeneous subgroups with graph-structured variable selection priors for Cox regression. arXiv: 2004.07542*.
 
