@@ -7,15 +7,9 @@ data, with the aim of obtaining a separate risk prediction model for each subgro
 For this purpose, we propose a Cox regression model with a graph-structured variable selection prior that incorporates information on the relationships among the covariates and encourages the joint selection of linked variables.
 These links correspond to variables either being conditionally dependent within each subgroup (e.g. functional or regulatory pathways) or being simultaneously prognostic across different subgroups.
 
-We compare our approach to Cox regression models with an independent Bernoulli prior for variable selection as proposed by Treppmann et al. (2017).
-We evaluate all models through simulations and a case study with Glioblastoma protein expression data.
-
-
 The difference between the method in Madjar et. al (2021) and my master thesis, will be that we will not focus on heterogenous subgroups, and we will not do structure learning on the graph.
 We will use Stochastic Search Variable Selection (SSVS), just as in Madjar et. al (2021), with a Markov Random Field prior, where we keep the graph fixed. This will allow us to use the
 graph to incorporate biological knowledge about functional and regulatory molecular pathways, and encourage the joint inclusion of genes that are in the same pathway.
-
-
 
 The main files to run the simulation study from Madjar et. al (2021) is **Run_Simulation.R** and the main file for the case study is **Run_CaseStudy.R**. Files from
 this paper might be removed if they are not necessary to my thesis.
